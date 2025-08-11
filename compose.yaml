@@ -1,0 +1,29 @@
+﻿services:
+  library-api:
+    container_name: library-api
+    build:
+      context: .
+      dockerfile: LibrarySystem.Api/Dockerfile
+    ports:
+      - "8080:8080" # HTTP
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=librarydb;Username=user;Password=password
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - db
+
+  db:
+    container_name: library-db
+    image: postgres
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=librarydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

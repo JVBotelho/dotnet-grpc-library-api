@@ -1,0 +1,158 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "LibrarySystem.Api.Protos";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service Library {
+  rpc GetBookById (GetBookByIdRequest) returns (BookResponse);
+  rpc CreateBook (CreateBookRequest) returns (BookResponse);
+  rpc GetAllBooks (google.protobuf.Empty) returns (GetAllBooksResponse);
+  rpc UpdateBook (UpdateBookRequest) returns (BookResponse);
+  rpc DeleteBook (DeleteBookRequest) returns (google.protobuf.Empty);
+  rpc GetMostBorrowedBooks (GetMostBorrowedBooksRequest) returns (GetMostBorrowedBooksResponse);
+  rpc GetBookAvailability (GetBookAvailabilityRequest) returns (BookAvailabilityResponse);
+  rpc GetTopBorrowers (GetTopBorrowersRequest) returns (GetTopBorrowersResponse);
+  rpc GetUserLendingHistory (GetUserLendingHistoryRequest) returns (GetUserLendingHistoryResponse);
+  rpc GetAlsoBorrowedBooks (GetAlsoBorrowedBooksRequest) returns (GetAlsoBorrowedBooksResponse);
+  rpc EstimateReadingRate (EstimateReadingRateRequest) returns (EstimateReadingRateResponse);
+  rpc CreateLending (CreateLendingRequest) returns (LendingActivityResponse);
+  rpc ReturnBook (ReturnBookRequest) returns (LendingActivityResponse);
+}
+
+message GetBookByIdRequest {
+  int32 id = 1;
+}
+
+message BookResponse {
+  int32 id = 1;
+  string title = 2;
+  string author = 3;
+  int32 publication_year = 4;
+  int32 pages = 5;
+  int32 total_copies = 6;
+}
+
+message CreateBookRequest {
+  string title = 1;
+  string author = 2;
+  int32 publication_year = 3;
+  int32 pages = 4;
+  int32 total_copies = 5;
+}
+
+message GetAllBooksResponse {
+  repeated BookResponse books = 1;
+}
+
+message UpdateBookRequest {
+  int32 id = 1;
+  string title = 2;
+  string author = 3;
+  int32 publication_year = 4;
+  int32 pages = 5;
+  int32 total_copies = 6;
+}
+
+message DeleteBookRequest {
+  int32 id = 1;
+}
+message GetMostBorrowedBooksRequest {
+  int32 count = 1;
+}
+
+message MostBorrowedBookInfo {
+  BookResponse book = 1;
+  int32 borrow_count = 2;
+}
+
+message GetMostBorrowedBooksResponse {
+  repeated MostBorrowedBookInfo most_borrowed_books = 1;
+}
+
+message GetBookAvailabilityRequest {
+  int32 book_id = 1;
+}
+
+message BookAvailabilityResponse {
+  int32 total_copies = 1;
+  int32 borrowed_copies = 2;
+  int32 available_copies = 3;
+}
+
+message GetTopBorrowersRequest {
+  int32 count = 1;
+  google.protobuf.Timestamp start_date = 2;
+  google.protobuf.Timestamp end_date = 3;
+}
+
+message TopBorrowerInfo {
+  BorrowerResponse borrower = 1;
+  int32 borrow_count = 2;
+}
+
+message GetTopBorrowersResponse {
+  repeated TopBorrowerInfo top_borrowers = 1;
+}
+
+message BorrowerResponse {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message GetUserLendingHistoryRequest {
+  int32 borrower_id = 1;
+  google.protobuf.Timestamp start_date = 2;
+  google.protobuf.Timestamp end_date = 3;
+}
+
+message UserLendingHistoryItem {
+  BookResponse book = 1;
+  google.protobuf.Timestamp borrowed_date = 2;
+  optional google.protobuf.Timestamp returned_date = 3;
+}
+
+message GetUserLendingHistoryResponse {
+  repeated UserLendingHistoryItem history = 1;
+}
+
+message GetAlsoBorrowedBooksRequest {
+  int32 book_id = 1;
+  int32 count = 2;
+}
+
+message AlsoBorrowedBookInfo {
+  BookResponse book = 1;
+  int32 common_borrowers_count = 2;
+}
+
+message GetAlsoBorrowedBooksResponse {
+  repeated AlsoBorrowedBookInfo also_borrowed_books = 1;
+}
+
+message EstimateReadingRateRequest {
+  int32 book_id = 1;
+}
+
+message EstimateReadingRateResponse {
+  double pages_per_day = 1;
+}
+
+
+message CreateLendingRequest {
+  int32 book_id = 1;
+  int32 borrower_id = 2;
+}
+
+message ReturnBookRequest {
+  int32 lending_activity_id = 1;
+}
+
+message LendingActivityResponse {
+  int32 id = 1;
+  int32 book_id = 2;
+  int32 borrower_id = 3;
+  google.protobuf.Timestamp borrowed_date = 4;
+  optional google.protobuf.Timestamp returned_date = 5;
+}

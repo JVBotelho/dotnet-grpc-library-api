@@ -1,0 +1,69 @@
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# Visual Studio / Rider IDE specific files
+.vs/
+.idea/
+*.sln.ide/
+
+# Rider temporary files
+*.sln.iml
+*.sln.DotSettings.user
+
+# Resharper
+_ReSharper*/
+*.[Rr]esharper
+*.DotSettings.user
+
+# Visual Studio 2019 cache/options
+.vsconfig
+
+# MSTest test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NUnit
+*.VisualState.xml
+TestResult.xml
+nunit-agent*.log
+nunit-internal*.log
+
+# Windows files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Docker
+docker-compose.override.yml
+
+# Secrets
+secrets.json
+
+# Other
+*.Cache
+ClientBin/
+~$*
+*~
+*.dbmdl
+*.dbproj.schemaview
+*.pfx
+*.publishsettings
+node_modules/
+npm-debug.log
