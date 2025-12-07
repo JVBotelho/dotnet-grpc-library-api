@@ -1,48 +1,28 @@
-﻿using LibrarySystem.Persistence;
+﻿using LibrarySystem.Contracts.Protos;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Testcontainers.PostgreSql;
-using Library = LibrarySystem.Contracts.Protos.Library;
+using Moq;
 
 namespace LibrarySystem.IntegrationTests;
 
-public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
+public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
-    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
-        .WithImage("postgres")
-        .Build();
-
-    public async Task InitializeAsync()
-    {
-        await _dbContainer.StartAsync();
-    }
-
-    public new async Task DisposeAsync()
-    {
-        await _dbContainer.StopAsync();
-    }
+    // A CORREÇÃO ESTÁ AQUI: { CallBase = true }
+    // Isso permite que o Mock redirecione as chamadas das sobrecargas simplificadas 
+    // para a sobrecarga principal que aceita 'CallOptions', onde fizemos o Setup.
+    public Mock<Library.LibraryClient> LibraryClientMock { get; } = new(MockBehavior.Loose) { CallBase = true };
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.ConfigureServices(services =>
+        builder.ConfigureTestServices(services =>
         {
-            services.RemoveAll(typeof(DbContextOptions<LibraryDbContext>));
-
-            services.AddDbContext<LibraryDbContext>(options =>
-            {
-                options.UseNpgsql(_dbContainer.GetConnectionString());
-            });
-
-            services.AddGrpcClient<Library.LibraryClient>(o => { o.Address = new Uri("http://localhost"); })
-                .ConfigurePrimaryHttpMessageHandler(() => Server.CreateHandler());
-
-            var sp = services.BuildServiceProvider();
-            using var scope = sp.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
-            dbContext.Database.Migrate();
+            services.RemoveAll(typeof(Library.LibraryClient));
+            services.RemoveAll(typeof(Grpc.Net.ClientFactory.GrpcClientFactory));
+            
+            services.AddSingleton(LibraryClientMock.Object);
         });
     }
 }
