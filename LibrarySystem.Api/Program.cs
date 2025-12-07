@@ -8,9 +8,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddGrpcClient<Library.LibraryClient>(options =>
+builder.Services.AddGrpcClient<Library.LibraryClient>(o =>
 {
-    options.Address = new Uri("https://localhost:7049"); 
+    var address = builder.Configuration["GrpcSettings:ServiceUrl"] ?? "https://localhost:7049";
+    
+    o.Address = new Uri(address);
+    
+    if (o.Address.Scheme == "http")
+    {
+        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+    }
 });
 
 builder.Services.AddSingleton<IApiMarker, ApiMarker>();
@@ -23,7 +30,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.MapControllers();
 

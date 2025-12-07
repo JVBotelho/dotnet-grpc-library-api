@@ -6,11 +6,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    // options.ListenLocalhost(7049, o => o.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2);
+    options.ConfigureEndpointDefaults(lo => lo.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2);
 });
 
-// Adicionar serviços
-builder.Services.AddGrpc();
+builder.Services.AddGrpc(options =>
+{
+    options.EnableDetailedErrors = true;
+});
+
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
 
@@ -21,8 +24,6 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        // Executa o SeedData que criamos anteriormente dentro da Persistence
-        // Nota: O método SeedDatabaseAsync era uma extensão de IHost, talvez precise ajustar a chamada:
         await SeedData.SeedDatabaseAsync(app); 
     }
     catch (Exception ex)
