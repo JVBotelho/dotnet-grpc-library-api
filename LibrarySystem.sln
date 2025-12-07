@@ -21,6 +21,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibrarySystem.IntegrationTe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibrarySystem.Contracts", "LibrarySystem.Contracts\LibrarySystem.Contracts.csproj", "{B42DAFA3-EBE3-4913-BC16-95EA9995C1B1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibrarySystem.Domain", "LibrarySystem.Domain\LibrarySystem.Domain.csproj", "{FD033796-73C5-43BE-ABAC-382562AF316D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibrarySystem.Application", "LibrarySystem.Application\LibrarySystem.Application.csproj", "{F987F2F1-5280-40A3-AA72-CA2E5EE4A112}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,5 +59,13 @@ Global
 		{B42DAFA3-EBE3-4913-BC16-95EA9995C1B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B42DAFA3-EBE3-4913-BC16-95EA9995C1B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B42DAFA3-EBE3-4913-BC16-95EA9995C1B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD033796-73C5-43BE-ABAC-382562AF316D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD033796-73C5-43BE-ABAC-382562AF316D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD033796-73C5-43BE-ABAC-382562AF316D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD033796-73C5-43BE-ABAC-382562AF316D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F987F2F1-5280-40A3-AA72-CA2E5EE4A112}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F987F2F1-5280-40A3-AA72-CA2E5EE4A112}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F987F2F1-5280-40A3-AA72-CA2E5EE4A112}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F987F2F1-5280-40A3-AA72-CA2E5EE4A112}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

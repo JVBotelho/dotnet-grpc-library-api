@@ -1,6 +1,5 @@
 ﻿# Estágio 1: Build
-# Usamos a imagem do SDK do .NET 8 para compilar a aplicação.
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Otimização de Cache: Copiar ficheiros de projeto e restaurar dependências primeiro.
@@ -24,7 +23,7 @@ RUN dotnet publish "LibrarySystem.Api.csproj" -c Release -o /app/publish
 
 # Estágio 2: Final
 # Usamos a imagem mais leve do ASP.NET Runtime, que é otimizada para produção.
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081

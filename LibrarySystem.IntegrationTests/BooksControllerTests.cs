@@ -4,8 +4,8 @@ using AutoFixture;
 using FluentAssertions;
 using LibrarySystem.Api.Dtos;
 using LibrarySystem.Contracts.Protos;
+using LibrarySystem.Domain.Entities;
 using LibrarySystem.Persistence;
-using LibrarySystem.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

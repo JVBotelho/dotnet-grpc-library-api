@@ -1,4 +1,5 @@
-﻿using LibrarySystem.Persistence.Entities;
+﻿using System.Reflection;
+using LibrarySystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace LibrarySystem.Persistence;
@@ -9,7 +10,14 @@ public class LibraryDbContext : DbContext
     {
     }
 
-    public DbSet<Book> Books { get; set; }
-    public DbSet<Borrower> Borrowers { get; set; }
-    public DbSet<LendingActivity> LendingActivities { get; set; }
+    public DbSet<Book> Books => Set<Book>();
+    public DbSet<Borrower> Borrowers => Set<Borrower>();
+    public DbSet<LendingActivity> LendingActivities => Set<LendingActivity>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+        
+        base.OnModelCreating(modelBuilder);
+    }
 }
