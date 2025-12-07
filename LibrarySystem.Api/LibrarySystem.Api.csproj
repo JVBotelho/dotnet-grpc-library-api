@@ -30,12 +30,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\LibrarySystem.Contracts\LibrarySystem.Contracts.csproj" />
         <ProjectReference Include="..\LibrarySystem.Grpc\LibrarySystem.Grpc.csproj"/>
         <ProjectReference Include="..\LibrarySystem.Persistence\LibrarySystem.Persistence.csproj"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Protobuf Include="Protos\library.proto" GrpcServices="Client"/>
     </ItemGroup>
 
 

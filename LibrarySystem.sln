@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibrarySystem.UnitTests", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibrarySystem.IntegrationTests", "LibrarySystem.IntegrationTests\LibrarySystem.IntegrationTests.csproj", "{A206710A-C281-4475-8680-2DEF5F8188A4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibrarySystem.Contracts", "LibrarySystem.Contracts\LibrarySystem.Contracts.csproj", "{B42DAFA3-EBE3-4913-BC16-95EA9995C1B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,5 +51,9 @@ Global
 		{A206710A-C281-4475-8680-2DEF5F8188A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A206710A-C281-4475-8680-2DEF5F8188A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A206710A-C281-4475-8680-2DEF5F8188A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B42DAFA3-EBE3-4913-BC16-95EA9995C1B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B42DAFA3-EBE3-4913-BC16-95EA9995C1B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B42DAFA3-EBE3-4913-BC16-95EA9995C1B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B42DAFA3-EBE3-4913-BC16-95EA9995C1B1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

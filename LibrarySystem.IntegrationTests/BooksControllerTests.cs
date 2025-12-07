@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using AutoFixture;
 using FluentAssertions;
 using LibrarySystem.Api.Dtos;
-using LibrarySystem.Api.Protos;
+using LibrarySystem.Contracts.Protos;
 using LibrarySystem.Persistence;
 using LibrarySystem.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;

@@ -1,5 +1,5 @@
 using LibrarySystem.Api;
-using LibrarySystem.Api.Protos;
+using LibrarySystem.Contracts.Protos;
 using LibrarySystem.Grpc.Services;
 using LibrarySystem.Persistence;
 using Microsoft.EntityFrameworkCore;

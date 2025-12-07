@@ -2,7 +2,7 @@
 using FluentAssertions;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using LibrarySystem.Grpc.Protos;
+using LibrarySystem.Contracts.Protos;
 using LibrarySystem.Grpc.Services;
 using LibrarySystem.Persistence;
 using LibrarySystem.Persistence.Entities;

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.PostgreSql;
-using Library = LibrarySystem.Api.Protos.Library;
+using Library = LibrarySystem.Contracts.Protos.Library;
 
 namespace LibrarySystem.IntegrationTests;
 

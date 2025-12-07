@@ -1,9 +1,9 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using LibrarySystem.Contracts.Protos;
 using LibrarySystem.Persistence;
 using LibrarySystem.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
-using LibrarySystem.Grpc.Protos;
 
 namespace LibrarySystem.Grpc.Services;
 

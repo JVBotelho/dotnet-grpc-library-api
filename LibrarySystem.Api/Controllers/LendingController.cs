@@ -1,6 +1,6 @@
 ﻿using Grpc.Core;
 using LibrarySystem.Api.Dtos;
-using LibrarySystem.Api.Protos;
+using LibrarySystem.Contracts.Protos;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LibrarySystem.Api.Controllers;

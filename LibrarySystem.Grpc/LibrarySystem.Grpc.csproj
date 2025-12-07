@@ -24,11 +24,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Protobuf Include="Protos/library.proto" GrpcServices="Server"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\LibrarySystem.Persistence\LibrarySystem.Persistence.csproj"/>
+        <ProjectReference Include="..\LibrarySystem.Contracts\LibrarySystem.Contracts.csproj" />
+        <ProjectReference Include="..\LibrarySystem.Persistence\LibrarySystem.Persistence.csproj" />
     </ItemGroup>
 
 </Project>
