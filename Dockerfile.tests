@@ -1,0 +1,20 @@
+﻿FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY ["LibrarySystem.sln", "."]
+
+COPY ["LibrarySystem.Api/LibrarySystem.Api.csproj", "LibrarySystem.Api/"]
+COPY ["LibrarySystem.Grpc/LibrarySystem.Grpc.csproj", "LibrarySystem.Grpc/"]
+COPY ["LibrarySystem.Application/LibrarySystem.Application.csproj", "LibrarySystem.Application/"]
+COPY ["LibrarySystem.Domain/LibrarySystem.Domain.csproj", "LibrarySystem.Domain/"]
+COPY ["LibrarySystem.Persistence/LibrarySystem.Persistence.csproj", "LibrarySystem.Persistence/"]
+COPY ["LibrarySystem.Contracts/LibrarySystem.Contracts.csproj", "LibrarySystem.Contracts/"]
+COPY ["LibrarySystem.UnitTests/LibrarySystem.UnitTests.csproj", "LibrarySystem.UnitTests/"]
+COPY ["LibrarySystem.IntegrationTests/LibrarySystem.IntegrationTests.csproj", "LibrarySystem.IntegrationTests/"]
+COPY ["WarmupTasks/WarmupTasks.csproj", "WarmupTasks/"] 
+
+RUN dotnet restore
+
+COPY . .
+
+ENTRYPOINT ["dotnet", "test"]

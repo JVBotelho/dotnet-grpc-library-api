@@ -17,12 +17,12 @@ namespace LibrarySystem.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.19")
+                .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("LibrarySystem.Persistence.Entities.Book", b =>
+            modelBuilder.Entity("LibrarySystem.Domain.Entities.Book", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -32,7 +32,8 @@ namespace LibrarySystem.Persistence.Migrations
 
                     b.Property<string>("Author")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("Pages")
                         .HasColumnType("integer");
@@ -42,7 +43,8 @@ namespace LibrarySystem.Persistence.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<int>("TotalCopies")
                         .HasColumnType("integer");
@@ -52,7 +54,7 @@ namespace LibrarySystem.Persistence.Migrations
                     b.ToTable("Books");
                 });
 
-            modelBuilder.Entity("LibrarySystem.Persistence.Entities.Borrower", b =>
+            modelBuilder.Entity("LibrarySystem.Domain.Entities.Borrower", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -62,18 +64,23 @@ namespace LibrarySystem.Persistence.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
 
                     b.ToTable("Borrowers");
                 });
 
-            modelBuilder.Entity("LibrarySystem.Persistence.Entities.LendingActivity", b =>
+            modelBuilder.Entity("LibrarySystem.Domain.Entities.LendingActivity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -102,15 +109,15 @@ namespace LibrarySystem.Persistence.Migrations
                     b.ToTable("LendingActivities");
                 });
 
-            modelBuilder.Entity("LibrarySystem.Persistence.Entities.LendingActivity", b =>
+            modelBuilder.Entity("LibrarySystem.Domain.Entities.LendingActivity", b =>
                 {
-                    b.HasOne("LibrarySystem.Persistence.Entities.Book", "Book")
+                    b.HasOne("LibrarySystem.Domain.Entities.Book", "Book")
                         .WithMany("LendingActivities")
                         .HasForeignKey("BookId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LibrarySystem.Persistence.Entities.Borrower", "Borrower")
+                    b.HasOne("LibrarySystem.Domain.Entities.Borrower", "Borrower")
                         .WithMany("LendingActivities")
                         .HasForeignKey("BorrowerId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -121,12 +128,12 @@ namespace LibrarySystem.Persistence.Migrations
                     b.Navigation("Borrower");
                 });
 
-            modelBuilder.Entity("LibrarySystem.Persistence.Entities.Book", b =>
+            modelBuilder.Entity("LibrarySystem.Domain.Entities.Book", b =>
                 {
                     b.Navigation("LendingActivities");
                 });
 
-            modelBuilder.Entity("LibrarySystem.Persistence.Entities.Borrower", b =>
+            modelBuilder.Entity("LibrarySystem.Domain.Entities.Borrower", b =>
                 {
                     b.Navigation("LendingActivities");
                 });

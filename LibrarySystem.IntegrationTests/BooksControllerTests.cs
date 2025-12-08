@@ -2,58 +2,88 @@
 using System.Net.Http.Json;
 using AutoFixture;
 using FluentAssertions;
+using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
 using LibrarySystem.Api.Dtos;
-using LibrarySystem.Api.Protos;
-using LibrarySystem.Persistence;
-using LibrarySystem.Persistence.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using LibrarySystem.Contracts.Protos;
+using Moq;
+using Xunit;
 
 namespace LibrarySystem.IntegrationTests;
 
-public class BooksControllerTests(CustomWebApplicationFactory factory) : IClassFixture<CustomWebApplicationFactory>
+public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly HttpClient _client;
+    private readonly Mock<Library.LibraryClient> _grpcMock;
     private readonly Fixture _fixture = new();
+
+    public BooksControllerTests(CustomWebApplicationFactory factory)
+    {
+        _client = factory.CreateClient();
+        _grpcMock = factory.LibraryClientMock;
+        
+        // Clean slate for every test
+        _grpcMock.Reset();
+    }
 
     [Fact]
     public async Task CreateBook_WithValidData_ReturnsCreatedResponse()
     {
         // Arrange
-        var createBookDto = _fixture.Create<CreateBookDto>();
+        var createDto = _fixture.Create<CreateBookDto>();
+        var expectedResponse = new BookResponse
+        {
+            Id = 10,
+            Title = createDto.Title,
+            Author = createDto.Author,
+            PublicationYear = createDto.PublicationYear,
+            Pages = createDto.Pages,
+            TotalCopies = createDto.TotalCopies
+        };
+
+        // Mock: Accept any CreateBookRequest, return the expected BookResponse
+        SetupGrpcCall(c => c.CreateBookAsync(It.IsAny<CreateBookRequest>(), It.IsAny<CallOptions>()), expectedResponse);
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/books", createBookDto);
+        var response = await _client.PostAsJsonAsync("/api/books", createDto);
+
+        await EnsureSuccessOrThrow(response);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-
+        
+        // Verify Location Header
         response.Headers.Location.Should().NotBeNull();
-        response.Headers.Location!.OriginalString.Should().StartWith("http://localhost/api/Books/");
+        response.Headers.Location!.OriginalString.Should().Contain("/api/Books/10");
 
+        // Verify Body
         var createdBook = await response.Content.ReadFromJsonAsync<BookResponse>();
         createdBook.Should().NotBeNull();
-        createdBook!.Title.Should().Be(createBookDto.Title);
-        createdBook.Author.Should().Be(createBookDto.Author);
-        createdBook.Id.Should().BeGreaterThan(0);
+        createdBook!.Title.Should().Be(createDto.Title);
+        createdBook.Id.Should().Be(10);
     }
 
     [Fact]
     public async Task UpdateBook_WithValidData_ReturnsOkResponse()
     {
-        // Arrange: Primeiro, criar um livro para depois o podermos atualizar.
-        var createDto = _fixture.Create<CreateBookDto>();
-        var createResponse = await _client.PostAsJsonAsync("/api/books", createDto);
-        var createdBook = await createResponse.Content.ReadFromJsonAsync<BookResponse>();
-
+        // Arrange
         var updateDto = _fixture.Create<UpdateBookDto>();
+        var expectedResponse = new BookResponse 
+        { 
+            Id = 1, 
+            Title = updateDto.Title,
+            Author = updateDto.Author
+        };
+
+        SetupGrpcCall(c => c.UpdateBookAsync(It.IsAny<UpdateBookRequest>(), It.IsAny<CallOptions>()), expectedResponse);
 
         // Act
-        var updateResponse = await _client.PutAsJsonAsync($"/api/books/{createdBook!.Id}", updateDto);
+        var response = await _client.PutAsJsonAsync("/api/books/1", updateDto);
+        await EnsureSuccessOrThrow(response);
 
         // Assert
-        updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var updatedBook = await updateResponse.Content.ReadFromJsonAsync<BookResponse>();
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updatedBook = await response.Content.ReadFromJsonAsync<BookResponse>();
         updatedBook!.Title.Should().Be(updateDto.Title);
     }
 
@@ -61,197 +91,183 @@ public class BooksControllerTests(CustomWebApplicationFactory factory) : IClassF
     public async Task DeleteBook_WithExistingId_ReturnsNoContent()
     {
         // Arrange
-        var createDto = _fixture.Create<CreateBookDto>();
-        var createResponse = await _client.PostAsJsonAsync("/api/books", createDto);
-        var createdBook = await createResponse.Content.ReadFromJsonAsync<BookResponse>();
+        SetupGrpcCall(c => c.DeleteBookAsync(It.IsAny<DeleteBookRequest>(), It.IsAny<CallOptions>()), new Empty());
 
         // Act
-        var deleteResponse = await _client.DeleteAsync($"/api/books/{createdBook!.Id}");
+        var response = await _client.DeleteAsync("/api/books/1");
 
         // Assert 
-        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
-
-        var getResponse = await _client.GetAsync($"/api/books/{createdBook.Id}");
-        getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
     [Fact]
-    public async Task GetMostBorrowedBooks_ReturnsCorrectlyOrderedBooks()
+    public async Task GetBook_WhenNotFound_Returns404()
+    {
+        // Arrange: Simulate gRPC throwing RpcException(NotFound)
+        var rpcException = new RpcException(new Status(StatusCode.NotFound, "Book not found"));
+
+        _grpcMock.Setup(x => x.GetBookByIdAsync(It.IsAny<GetBookByIdRequest>(), It.IsAny<CallOptions>()))
+            .Throws(rpcException);
+
+        // Act
+        var response = await _client.GetAsync("/api/books/999");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("Book not found");
+    }
+
+    [Fact]
+    public async Task GetMostBorrowedBooks_ReturnsCorrectlyMappedList()
     {
         // Arrange
-        var book1Dto = _fixture.Create<CreateBookDto>();
-        var book2Dto = _fixture.Create<CreateBookDto>();
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
-        var borrower = _fixture.Build<Borrower>().Without(b => b.LendingActivities).Create();
-        context.Borrowers.Add(borrower);
-        await context.SaveChangesAsync();
+        var grpcResponse = new GetMostBorrowedBooksResponse();
+        grpcResponse.MostBorrowedBooks.Add(new MostBorrowedBookInfo
+        {
+            Book = new BookResponse { Id = 1, Title = "Clean Code" },
+            BorrowCount = 100
+        });
+        grpcResponse.MostBorrowedBooks.Add(new MostBorrowedBookInfo
+        {
+            Book = new BookResponse { Id = 2, Title = "DDD Distilled" },
+            BorrowCount = 50
+        });
 
-        var book1Response = await _client.PostAsJsonAsync("/api/books", book1Dto);
-        var book2Response = await _client.PostAsJsonAsync("/api/books", book2Dto);
-        var book1 = await book1Response.Content.ReadFromJsonAsync<BookResponse>();
-        var book2 = await book2Response.Content.ReadFromJsonAsync<BookResponse>();
-
-        await _client.PostAsJsonAsync("/api/lending",
-            new CreateLendingDto { BookId = book1!.Id, BorrowerId = borrower.Id });
-        await _client.PostAsJsonAsync("/api/lending",
-            new CreateLendingDto { BookId = book1!.Id, BorrowerId = borrower.Id });
-        await _client.PostAsJsonAsync("/api/lending",
-            new CreateLendingDto { BookId = book2!.Id, BorrowerId = borrower.Id });
+        SetupGrpcCall(c => c.GetMostBorrowedBooksAsync(It.IsAny<GetMostBorrowedBooksRequest>(), It.IsAny<CallOptions>()), grpcResponse);
 
         // Act
         var response = await _client.GetAsync("/api/books/most-borrowed?count=2");
+        await EnsureSuccessOrThrow(response);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var mostBorrowed = await response.Content.ReadFromJsonAsync<List<MostBorrowedBookInfo>>();
+        var list = await response.Content.ReadFromJsonAsync<List<MostBorrowedBookInfo>>();
 
-        mostBorrowed.Should().HaveCount(2);
-        mostBorrowed.Should().BeInDescendingOrder(b => b.BorrowCount);
-        mostBorrowed!.First().Book.Id.Should().Be(book1.Id);
-        mostBorrowed.First().BorrowCount.Should().Be(2);
+        list.Should().HaveCount(2);
+        list!.First().Book.Title.Should().Be("Clean Code");
+        list.First().BorrowCount.Should().Be(100);
     }
 
     [Fact]
-    public async Task GetBookAvailability_ReturnsCorrectAvailabilityCounts()
+    public async Task GetBookAvailability_ReturnsCorrectCounts()
     {
         // Arrange
-        var createBookDto = _fixture.Build<CreateBookDto>().With(b => b.TotalCopies, 10).Create();
-        var bookResponse = await _client.PostAsJsonAsync("/api/books", createBookDto);
-        var book = await bookResponse.Content.ReadFromJsonAsync<BookResponse>();
+        var expectedResponse = new BookAvailabilityResponse
+        {
+            TotalCopies = 10,
+            BorrowedCopies = 3,
+            AvailableCopies = 7
+        };
 
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
-        var borrower = _fixture.Build<Borrower>().Without(b => b.LendingActivities).Create();
-        context.Borrowers.Add(borrower);
-        await context.SaveChangesAsync();
-
-        for (var i = 0; i < 4; i++)
-            await _client.PostAsJsonAsync("/api/lending",
-                new CreateLendingDto { BookId = book!.Id, BorrowerId = borrower.Id });
+        SetupGrpcCall(c => c.GetBookAvailabilityAsync(It.IsAny<GetBookAvailabilityRequest>(), It.IsAny<CallOptions>()), expectedResponse);
 
         // Act
-        var availabilityResponse = await _client.GetAsync($"/api/books/{book!.Id}/availability");
+        var response = await _client.GetAsync("/api/books/1/availability");
+        await EnsureSuccessOrThrow(response);
 
         // Assert
-        availabilityResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var availability = await availabilityResponse.Content.ReadFromJsonAsync<BookAvailabilityResponse>();
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var availability = await response.Content.ReadFromJsonAsync<BookAvailabilityResponse>();
 
-        availability.Should().NotBeNull();
-        availability!.TotalCopies.Should().Be(10);
-        availability.BorrowedCopies.Should().Be(4);
-        availability.AvailableCopies.Should().Be(6);
+        availability!.AvailableCopies.Should().Be(7);
     }
 
     [Fact]
-    public async Task GetLendingHistory_ReturnsCorrectHistoryForUser()
+    public async Task GetLendingHistory_ReturnsCorrectList()
     {
         // Arrange
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
+        var grpcResponse = new GetUserLendingHistoryResponse();
+        grpcResponse.History.Add(new UserLendingHistoryItem
+        {
+            Book = new BookResponse { Id = 5, Title = "History 101" },
+            BorrowedDate = Timestamp.FromDateTime(DateTime.UtcNow)
+        });
 
-        var book1 = _fixture.Build<Book>().Without(b => b.LendingActivities).Create();
-        var book2 = _fixture.Build<Book>().Without(b => b.LendingActivities).Create();
-        var borrower = _fixture.Build<Borrower>().Without(b => b.LendingActivities).Create();
-        await context.Books.AddRangeAsync(book1, book2);
-        await context.Borrowers.AddAsync(borrower);
-        await context.SaveChangesAsync();
+        SetupGrpcCall(c => c.GetUserLendingHistoryAsync(It.IsAny<GetUserLendingHistoryRequest>(), It.IsAny<CallOptions>()), grpcResponse);
 
-        await _client.PostAsJsonAsync("/api/lending",
-            new CreateLendingDto { BookId = book1.Id, BorrowerId = borrower.Id });
-        var oldLending = new LendingActivity
-            { BookId = book2.Id, BorrowerId = borrower.Id, BorrowedDate = DateTime.UtcNow.AddMonths(-2) };
-        context.LendingActivities.Add(oldLending);
-        await context.SaveChangesAsync();
-
-        var startDate = DateTime.UtcNow.AddDays(-1).ToString("o");
-        var endDate = DateTime.UtcNow.AddDays(1).ToString("o");
+        var start = DateTime.UtcNow.AddDays(-1).ToString("o");
+        var end = DateTime.UtcNow.AddDays(1).ToString("o");
 
         // Act
-        var response =
-            await _client.GetAsync($"/api/borrowers/{borrower.Id}/history?startDate={startDate}&endDate={endDate}");
+        var response = await _client.GetAsync($"/api/borrowers/1/history?startDate={start}&endDate={end}");
+        await EnsureSuccessOrThrow(response);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var history = await response.Content.ReadFromJsonAsync<List<UserLendingHistoryItem>>();
-
-        history.Should().NotBeNull().And.HaveCount(1);
-        history!.First().Book.Id.Should().Be(book1.Id);
+        
+        history.Should().HaveCount(1);
+        history!.First().Book.Title.Should().Be("History 101");
     }
 
     [Fact]
-    public async Task GetAlsoBorrowed_ReturnsCorrectlyRankedBooks()
+    public async Task GetAlsoBorrowed_ReturnsRankedList()
     {
         // Arrange
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
+        var grpcResponse = new GetAlsoBorrowedBooksResponse();
+        grpcResponse.AlsoBorrowedBooks.Add(new AlsoBorrowedBookInfo
+        {
+            Book = new BookResponse { Id = 9, Title = "Related Book" },
+            CommonBorrowersCount = 10
+        });
 
-        var mainBook = _fixture.Build<Book>().Without(b => b.LendingActivities).Create();
-        var otherBook = _fixture.Build<Book>().Without(b => b.LendingActivities).Create();
-        var borrower1 = _fixture.Build<Borrower>().Without(b => b.LendingActivities).Create();
-        var borrower2 = _fixture.Build<Borrower>().Without(b => b.LendingActivities).Create();
-        await context.Books.AddRangeAsync(mainBook, otherBook);
-        await context.Borrowers.AddRangeAsync(borrower1, borrower2);
-        await context.SaveChangesAsync();
-
-        await _client.PostAsJsonAsync("/api/lending",
-            new CreateLendingDto { BookId = mainBook.Id, BorrowerId = borrower1.Id });
-        await _client.PostAsJsonAsync("/api/lending",
-            new CreateLendingDto { BookId = otherBook.Id, BorrowerId = borrower1.Id });
-        await _client.PostAsJsonAsync("/api/lending",
-            new CreateLendingDto { BookId = mainBook.Id, BorrowerId = borrower2.Id });
+        SetupGrpcCall(c => c.GetAlsoBorrowedBooksAsync(It.IsAny<GetAlsoBorrowedBooksRequest>(), It.IsAny<CallOptions>()), grpcResponse);
 
         // Act
-        var response = await _client.GetAsync($"/api/books/{mainBook.Id}/also-borrowed");
+        var response = await _client.GetAsync("/api/books/1/also-borrowed");
+        await EnsureSuccessOrThrow(response);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var alsoBorrowed = await response.Content.ReadFromJsonAsync<List<AlsoBorrowedBookInfo>>();
-
-        alsoBorrowed.Should().NotBeNull().And.HaveCount(1);
-        alsoBorrowed!.First().Book.Id.Should().Be(otherBook.Id);
-        alsoBorrowed!.First().CommonBorrowersCount.Should().Be(1);
+        var list = await response.Content.ReadFromJsonAsync<List<AlsoBorrowedBookInfo>>();
+        
+        list!.First().Book.Title.Should().Be("Related Book");
     }
 
     [Fact]
-    public async Task GetReadingRate_WithCompletedLoan_ReturnsCorrectRate()
+    public async Task GetReadingRate_ReturnsDoubleValue()
     {
         // Arrange
-        var bookDto = _fixture.Build<CreateBookDto>().With(b => b.Pages, 100).Create();
-        var bookResponse = await _client.PostAsJsonAsync("/api/books", bookDto);
-        var book = await bookResponse.Content.ReadFromJsonAsync<BookResponse>();
+        var expectedResponse = new EstimateReadingRateResponse { PagesPerDay = 42.5 };
 
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
-        var borrower = _fixture.Build<Borrower>().Without(b => b.LendingActivities).Create();
-        context.Borrowers.Add(borrower);
-        await context.SaveChangesAsync();
-
-        var lendingResponse = await _client.PostAsJsonAsync("/api/lending",
-            new CreateLendingDto { BookId = book!.Id, BorrowerId = borrower.Id });
-        var lending = await lendingResponse.Content.ReadFromJsonAsync<LendingActivityResponse>();
-
-        var activity = await context.LendingActivities.FindAsync(lending!.Id);
-        activity!.BorrowedDate = DateTime.UtcNow.AddDays(-10); 
-        activity.ReturnedDate = DateTime.UtcNow; 
-        await context.SaveChangesAsync();
+        SetupGrpcCall(c => c.EstimateReadingRateAsync(It.IsAny<EstimateReadingRateRequest>(), It.IsAny<CallOptions>()), expectedResponse);
 
         // Act
-        var rateResponse = await _client.GetAsync($"/api/books/{book.Id}/reading-rate");
+        var response = await _client.GetAsync("/api/books/1/reading-rate");
+        await EnsureSuccessOrThrow(response);
 
         // Assert
-        rateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var rate = await rateResponse.Content.ReadFromJsonAsync<EstimateReadingRateResponse>();
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var rate = await response.Content.ReadFromJsonAsync<EstimateReadingRateResponse>();
 
-        rate.Should().NotBeNull();
-        rate!.PagesPerDay.Should().BeApproximately(10, 0.01);
+        rate!.PagesPerDay.Should().Be(42.5);
     }
 
-    private async Task ResetDatabase()
+    // --- HELPERS ---
+
+    // Helper to setup AsyncUnaryCall for gRPC mocks (Reduces boilerplate)
+    private void SetupGrpcCall<TResponse>(
+        System.Linq.Expressions.Expression<Func<Library.LibraryClient, AsyncUnaryCall<TResponse>>> expression, 
+        TResponse returnObject)
     {
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
-        await context.Database.EnsureDeletedAsync();
-        await context.Database.MigrateAsync();
+        var call = new AsyncUnaryCall<TResponse>(
+            Task.FromResult(returnObject),
+            Task.FromResult(new Metadata()),
+            () => Status.DefaultSuccess,
+            () => new Metadata(),
+            () => { });
+
+        _grpcMock.Setup(expression).Returns(call);
+    }
+
+    // Helper to throw a readable exception if the API returns 500 or 400 unexpected
+    private async Task EnsureSuccessOrThrow(HttpResponseMessage response)
+    {
+        if (!response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            throw new Exception($"API returned {response.StatusCode}. Content: {content}");
+        }
     }
 }

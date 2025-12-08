@@ -1,39 +1,39 @@
 using LibrarySystem.Api;
-using LibrarySystem.Api.Protos;
-using LibrarySystem.Grpc.Services;
-using LibrarySystem.Persistence;
-using Microsoft.EntityFrameworkCore;
+using LibrarySystem.Contracts.Protos;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddGrpc();
 
-builder.Services.AddGrpcClient<Library.LibraryClient>(o => { o.Address = new Uri("https://localhost:44393"); });
 builder.Services.AddControllers();
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddDbContext<LibraryDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddGrpcClient<Library.LibraryClient>(o =>
+{
+    var address = builder.Configuration["GrpcSettings:ServiceUrl"] ?? "https://localhost:7049";
+    
+    o.Address = new Uri(address);
+    
+    if (o.Address.Scheme == "http")
+    {
+        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+    }
+});
+
 builder.Services.AddSingleton<IApiMarker, ApiMarker>();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-app.MapControllers();
-app.MapGrpcService<LibraryService>();
+// app.UseHttpsRedirection();
 
-await app.SeedDatabaseAsync();
+app.MapControllers();
 
 app.Run();
 
-public partial class Program
-{
-}
+public partial class Program { }
