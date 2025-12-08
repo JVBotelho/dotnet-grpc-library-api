@@ -1,102 +1,77 @@
-# Library System API
+# 📚 Library System - Enterprise .NET 10 Microservices
 
-This project is a robust, API-driven application for a library to track its books, borrowers, and lending activity. It is designed with a clean, layered architecture and modern .NET practices, fully containerized with Docker for easy setup and execution.
+![.NET 10](https://img.shields.io/badge/.NET%2010-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![gRPC](https://img.shields.io/badge/gRPC-244c5a?style=for-the-badge&logo=grpc&logoColor=white)
 
-## Features
+A high-performance, distributed library management system designed to demonstrate **Modern Software Architecture** principles.
 
-The API provides key business insights through the following functionalities:
+This project goes beyond simple CRUD, implementing **Domain-Driven Design (DDD)**, **CQRS**, and **Clean Architecture** to solve complex business rules (inventory management, lending logic, and historical analytics) within a distributed **gRPC** environment.
 
-* **Book Management:** Full CRUD (Create, Read, Update, Delete) operations for books.
-* **Lending Management:** Endpoints to create a loan and return a book.
-* **Advanced Analytics:**
-    * Get the most borrowed books.
-    * Check the current availability of a specific book (borrowed vs. available copies).
-    * Identify the most active users within a given time frame.
-    * Retrieve the complete borrowing history for a specific user in a given period.
-    * Discover "also borrowed" books (recommendations based on other users' activity).
-    * Estimate the average reading rate (pages/day) for a book based on historical data.
+---
 
-## Tech Stack & Key Concepts
+## 🏗️ Architecture & Design Patterns
 
-* **Backend:** C#, .NET 8
-* **Framework:** ASP.NET Core Web API
-* **Internal Communication:** gRPC for high-performance RPC between the API and Service layers.
-* **Database:** PostgreSQL
-* **ORM:** Entity Framework Core (Code-First approach)
-* **Testing:**
-    * **Unit Tests:** xUnit, Moq, AutoFixture
-    * **Integration Tests:** xUnit, `WebApplicationFactory`, Testcontainers
-* **Containerization:** Docker, Docker Compose
-* **Architecture:** Clean, layered architecture with a clear separation of concerns (API, Service, Persistence).
+The solution is split into two main services communicating via high-performance RPC:
 
-## Architectural Decisions
+1.  **Library.Api (Gateway):** A thin REST API acting as a Backend-for-Frontend (BFF). It handles HTTP requests, validation, and forwards commands to the core via gRPC.
+2.  **Library.Grpc (Core):** The heart of the system. It encapsulates the Domain and Application layers, manages the Database, and executes business logic.
 
-* **Layered Architecture:** The solution is structured into distinct layers (API, gRPC Service, Persistence) to ensure a clean separation of concerns, making the application more maintainable and scalable.
-* **gRPC for Internal Services:** As required, gRPC is used for communication between the API and the service layer. This provides a strongly-typed contract (`.proto` file), high performance, and prepares the system for a potential future migration to a microservices architecture.
-* **Testcontainers for Integration Tests:** To ensure reliable and isolated integration tests, the project uses Testcontainers. This library programmatically spins up a real, disposable PostgreSQL container for each test run, eliminating test pollution and guaranteeing that tests run against a clean, consistent database environment.
+### Key Concepts Applied
+* **Clean Architecture:** Strict dependency rule (Domain <- Application <- Infrastructure <- Presentation).
+* **Domain-Driven Design (DDD):** Rich Domain Models (`Book`, `LendingActivity`) enforce invariants. No anemic models allowed.
+* **CQRS (Command Query Responsibility Segregation):** Implemented using **MediatR**. Writes (Commands) and Reads (Queries) are handled separately for scalability.
+* **Vertical Slices:** Features are organized by Use Cases (e.g., `BorrowBook`, `GetMostBorrowed`) rather than technical layers.
+* **gRPC Code-First:** Strongly typed contracts defined in `.proto` files shared between services.
+* **Shift-Left Quality:** Heavy emphasis on unit testing domain logic and integration testing API contracts.
 
-## Future Improvements / Roadmap
+---
 
-This project serves as a foundation. The following improvements are planned to elevate it to a production-grade enterprise application:
+## 🚀 Tech Stack
 
-1.  **Refactor to Clean Architecture:**
-    * **Goal:** Decouple the core business logic from external concerns like gRPC and Entity Framework.
-    * **Plan:** Introduce a central `Application` layer containing use cases (interactors) and domain-agnostic interfaces (`IRepository`). The gRPC service would then become a simple adapter that calls these use cases, making the business logic reusable across different delivery mechanisms (e.g., message queues, other RPC frameworks).
+* **Runtime:** .NET 10 (Preview/LTS)
+* **Communication:** gRPC (HTTP/2) & REST (HTTP/1.1)
+* **Data:** PostgreSQL 16
+* **ORM:** Entity Framework Core (Code-First with Fluent API)
+* **Mediation:** MediatR
+* **Testing:** xUnit, FluentAssertions, Moq, AutoFixture
+* **Containerization:** Docker & Docker Compose
 
-2.  **Enrich the Domain Model (DDD):**
-    * **Goal:** Move from an anemic domain model (entities as data bags) to a rich domain model where entities enforce their own invariants.
-    * **Plan:** Encapsulate business logic within the domain entities themselves. For example, the `Book` entity could have a `BorrowCopy()` method that contains the logic to check for availability, throwing a `BookNotAvailableException` if no copies are left. This centralizes business rules and makes the system more robust.
+---
 
-3.  **Implement Robust Validation:**
-    * **Goal:** Centralize and strengthen input validation.
-    * **Plan:** Integrate `FluentValidation` to create dedicated validator classes for all incoming DTOs and requests. This will replace scattered `if` checks with a declarative, reusable, and easily testable validation pipeline that runs automatically.
-
-4.  **Add Security (Authentication & Authorization):**
-    * **Goal:** Secure the API endpoints to ensure that only authorized users (e.g., librarians) can perform actions.
-    * **Plan:** Implement JWT (JSON Web Token) based authentication. This would involve creating `Auth` endpoints for login and token generation. Subsequently, apply authorization policies (`[Authorize]`) to the API controllers to protect the endpoints.
-
-## Getting Started
+## 🛠️ Getting Started
 
 ### Prerequisites
+* Docker & Docker Compose
 
-* Docker and Docker Compose
-* .NET 8 SDK (for running tests locally)
+### Running the Application
+You don't need .NET installed to run the system. Docker handles everything.
 
-### How to Run the Application
-
-1.  **Start the Application and Database**
-
-    To start the API and the database, run the following command in the project root:
-
+1.  **Clone and Start:**
     ```bash
     docker-compose up --build
     ```
 
-2.  **Access the API**
+2.  **Access the System:**
+    * **Swagger UI (API):** `http://localhost:5000/swagger`
+    * **API Internal URL:** `http://localhost:5000`
+    * **gRPC Service:** `http://localhost:5001` (Internal Docker Network)
 
-    The API will be available at the following addresses:
+    *Note: The system automatically seeds the database with sample books and historical lending data on startup.*
 
-    * **HTTP:** `http://localhost:8080`
-    * **Swagger UI:** `http://localhost:8080/swagger`
+---
 
-## How to Run the Tests (Locally)
+## 🧪 Running Tests
 
-The integration tests depend on Docker to start a temporary database, ensuring isolation.
+We prioritize **Developer Experience**. You can run the entire test suite (Unit + Integration) inside a container without setting up a local environment.
 
-1.  **Restore Dependencies**
+### Test Strategy
+* **Domain Tests:** Verify complex business rules (e.g., "Cannot borrow if copies < 1") in isolation.
+* **Application Tests:** Verify the orchestration of Use Cases and Repository calls using Mocks.
+* **Integration Tests:** Verify the API Gateway correctly maps HTTP requests to gRPC calls using `WebApplicationFactory` and gRPC Mocks.
 
-    Open a terminal in the project root and run:
-
-    ```bash
-    dotnet restore
-    ```
-
-2.  **Run Tests**
-
-    With Docker Desktop running, execute the following command to run all unit and integration tests:
-
-    ```bash
-    dotnet test
-    ```
-
-    This command will compile the test projects and run all tests found in the solution.
+### Command to Run Tests
+```bash
+# Windows / Linux / Mac
+docker-compose -f docker-compose.tests.yml up --build --abort-on-container-exit
