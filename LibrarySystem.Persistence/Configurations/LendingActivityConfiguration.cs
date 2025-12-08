@@ -12,6 +12,5 @@ internal sealed class LendingActivityConfiguration : IEntityTypeConfiguration<Le
 
         builder.Property(l => l.BorrowedDate)
             .IsRequired();
-            
     }
 }

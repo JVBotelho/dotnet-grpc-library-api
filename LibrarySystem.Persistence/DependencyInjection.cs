@@ -13,7 +13,7 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         services.AddDbContext<LibraryDbContext>(options =>
-            options.UseNpgsql(connectionString)); 
+            options.UseNpgsql(connectionString));
 
         services.AddScoped<IBookRepository, BookRepository>();
         services.AddScoped<IBorrowerRepository, BorrowerRepository>();

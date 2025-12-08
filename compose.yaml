@@ -19,14 +19,14 @@
       context: .
       dockerfile: LibrarySystem.Grpc/Dockerfile
     ports:
-      - "5001:8080" 
+      - "5001:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=librarydb;Username=user;Password=password
     depends_on:
       db:
-          condition: service_healthy
+        condition: service_healthy
 
   db:
     container_name: library-db

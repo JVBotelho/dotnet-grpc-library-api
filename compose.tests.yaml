@@ -4,7 +4,7 @@
       context: .
       dockerfile: Dockerfile.tests
     container_name: library-tests-unit
-    command: ["LibrarySystem.UnitTests/LibrarySystem.UnitTests.csproj", "--logger:trx"]
+    command: [ "LibrarySystem.UnitTests/LibrarySystem.UnitTests.csproj", "--logger:trx" ]
     volumes:
       - ./TestResults:/src/LibrarySystem.UnitTests/TestResults
 
@@ -15,6 +15,6 @@
     container_name: library-tests-integration
     environment:
       - ASPNETCORE_ENVIRONMENT=Testing
-    command: ["LibrarySystem.IntegrationTests/LibrarySystem.IntegrationTests.csproj", "--logger:trx"]
+    command: [ "LibrarySystem.IntegrationTests/LibrarySystem.IntegrationTests.csproj", "--logger:trx" ]
     volumes:
       - ./TestResults:/src/LibrarySystem.IntegrationTests/TestResults

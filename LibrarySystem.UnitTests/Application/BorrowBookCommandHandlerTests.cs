@@ -28,7 +28,7 @@ public class BorrowBookCommandHandlerTests
 
         _bookRepoMock.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
-        
+
         _borrowerRepoMock.Setup(x => x.GetByIdAsync(2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(borrower);
 
@@ -57,9 +57,9 @@ public class BorrowBookCommandHandlerTests
         var command = new BorrowBookCommand(1, 2);
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _handler.Handle(command, CancellationToken.None));
-            
+
         _bookRepoMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -69,14 +69,14 @@ public class BorrowBookCommandHandlerTests
         // Arrange
         var book = new Book("Title", "Author", 2000, 100, 1);
         _bookRepoMock.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(book);
-        
+
         _borrowerRepoMock.Setup(x => x.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Borrower?)null);
 
         var command = new BorrowBookCommand(1, 2);
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _handler.Handle(command, CancellationToken.None));
     }
 }

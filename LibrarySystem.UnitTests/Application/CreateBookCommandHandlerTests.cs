@@ -38,8 +38,8 @@ public class CreateBookCommandHandlerTests
         result.TotalCopies.Should().Be(command.TotalCopies);
 
         _bookRepoMock.Verify(x => x.AddAsync(
-                It.Is<Book>(b => b.Title == command.Title && b.Author == command.Author), 
-                It.IsAny<CancellationToken>()), 
+                It.Is<Book>(b => b.Title == command.Title && b.Author == command.Author),
+                It.IsAny<CancellationToken>()),
             Times.Once);
 
         _bookRepoMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);

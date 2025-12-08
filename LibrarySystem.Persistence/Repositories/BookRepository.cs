@@ -8,7 +8,10 @@ internal sealed class BookRepository : IBookRepository
 {
     private readonly LibraryDbContext _context;
 
-    public BookRepository(LibraryDbContext context) => _context = context;
+    public BookRepository(LibraryDbContext context)
+    {
+        _context = context;
+    }
 
     public async Task<Book?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
@@ -27,9 +30,15 @@ internal sealed class BookRepository : IBookRepository
         await _context.Books.AddAsync(book, cancellationToken);
     }
 
-    public void Update(Book book) => _context.Books.Update(book);
+    public void Update(Book book)
+    {
+        _context.Books.Update(book);
+    }
 
-    public void Remove(Book book) => _context.Books.Remove(book);
+    public void Remove(Book book)
+    {
+        _context.Books.Remove(book);
+    }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -46,7 +55,8 @@ internal sealed class BookRepository : IBookRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Book>> GetAlsoBorrowedAsync(int bookId, int count, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Book>> GetAlsoBorrowedAsync(int bookId, int count,
+        CancellationToken cancellationToken = default)
     {
         var borrowerIds = await _context.LendingActivities
             .Where(la => la.BookId == bookId)
@@ -63,7 +73,7 @@ internal sealed class BookRepository : IBookRepository
             .OrderByDescending(x => x.Count)
             .Take(count)
             .ToListAsync(cancellationToken);
-            
+
         var bookIds = books.Select(x => x.BookId).ToList();
 
         return await _context.Books

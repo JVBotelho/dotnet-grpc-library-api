@@ -17,10 +17,10 @@ public class CreateBookCommandHandler : IRequestHandler<CreateBookCommand, BookD
     public async Task<BookDto> Handle(CreateBookCommand request, CancellationToken cancellationToken)
     {
         var book = new Book(
-            request.Title, 
-            request.Author, 
-            request.PublicationYear, 
-            request.Pages, 
+            request.Title,
+            request.Author,
+            request.PublicationYear,
+            request.Pages,
             request.TotalCopies
         );
 

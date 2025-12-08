@@ -9,16 +9,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
+        <PackageReference Include="Grpc.AspNetCore" Version="2.71.0"/>
         <PackageReference Include="Grpc.AspNetCore.Web" Version="2.71.0"/>
         <PackageReference Include="Grpc.Tools" Version="2.76.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="MediatR" Version="14.0.0" />
+        <PackageReference Include="MediatR" Version="14.0.0"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
     </ItemGroup>
 
@@ -29,9 +29,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\LibrarySystem.Application\LibrarySystem.Application.csproj" />
-        <ProjectReference Include="..\LibrarySystem.Contracts\LibrarySystem.Contracts.csproj" />
-        <ProjectReference Include="..\LibrarySystem.Persistence\LibrarySystem.Persistence.csproj" />
+        <ProjectReference Include="..\LibrarySystem.Application\LibrarySystem.Application.csproj"/>
+        <ProjectReference Include="..\LibrarySystem.Contracts\LibrarySystem.Contracts.csproj"/>
+        <ProjectReference Include="..\LibrarySystem.Persistence\LibrarySystem.Persistence.csproj"/>
     </ItemGroup>
 
 </Project>

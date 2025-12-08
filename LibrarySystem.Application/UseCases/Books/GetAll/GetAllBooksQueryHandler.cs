@@ -16,14 +16,14 @@ public class GetAllBooksQueryHandler : IRequestHandler<GetAllBooksQuery, IEnumer
     public async Task<IEnumerable<BookDto>> Handle(GetAllBooksQuery request, CancellationToken cancellationToken)
     {
         var books = await _bookRepository.GetAllAsync(cancellationToken);
-        
+
         return books.Select(b => new BookDto(
-            b.Id, 
-            b.Title, 
-            b.Author, 
-            b.PublicationYear, 
-            b.Pages, 
-            b.TotalCopies, 
+            b.Id,
+            b.Title,
+            b.Author,
+            b.PublicationYear,
+            b.Pages,
+            b.TotalCopies,
             b.TotalCopies - b.LendingActivities.Count(la => la.ReturnedDate == null)
         ));
     }

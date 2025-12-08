@@ -13,17 +13,19 @@ public class GetUserHistoryQueryHandler : IRequestHandler<GetUserHistoryQuery, I
         _lendingRepository = lendingRepository;
     }
 
-    public async Task<IEnumerable<LendingHistoryDto>> Handle(GetUserHistoryQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<LendingHistoryDto>> Handle(GetUserHistoryQuery request,
+        CancellationToken cancellationToken)
     {
         var history = await _lendingRepository.GetUserHistoryAsync(
-            request.BorrowerId, 
-            request.StartDate, 
-            request.EndDate, 
+            request.BorrowerId,
+            request.StartDate,
+            request.EndDate,
             cancellationToken
         );
 
         return history.Select(h => new LendingHistoryDto(
-            new BookDto(h.Book!.Id, h.Book.Title, h.Book.Author, h.Book.PublicationYear, h.Book.Pages, h.Book.TotalCopies, 0),
+            new BookDto(h.Book!.Id, h.Book.Title, h.Book.Author, h.Book.PublicationYear, h.Book.Pages,
+                h.Book.TotalCopies, 0),
             h.BorrowedDate,
             h.ReturnedDate
         ));

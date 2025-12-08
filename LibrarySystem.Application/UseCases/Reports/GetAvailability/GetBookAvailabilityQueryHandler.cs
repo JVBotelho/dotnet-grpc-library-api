@@ -17,16 +17,16 @@ public class GetBookAvailabilityQueryHandler : IRequestHandler<GetBookAvailabili
     public async Task<BookAvailabilityDto> Handle(GetBookAvailabilityQuery request, CancellationToken cancellationToken)
     {
         var book = await _bookRepository.GetByIdAsync(request.BookId, cancellationToken);
-        
-        if (book is null) 
+
+        if (book is null)
             throw new KeyNotFoundException($"Book with ID {request.BookId} not found.");
 
         var borrowedCount = await _lendingRepository.GetBorrowedCopiesCountAsync(request.BookId, cancellationToken);
 
         return new BookAvailabilityDto(
-            TotalCopies: book.TotalCopies,
-            BorrowedCopies: borrowedCount,
-            AvailableCopies: book.TotalCopies - borrowedCount
+            book.TotalCopies,
+            borrowedCount,
+            book.TotalCopies - borrowedCount
         );
     }
 }
