@@ -37,52 +37,52 @@ public static class SeedData
 
         await context.Borrowers.AddRangeAsync(borrowers);
         await context.Books.AddRangeAsync(books);
-        
-        
-        CreateHistoricalLending(books[0], borrowers[0], daysAgoBorrowed: 30, daysAgoReturned: 15);
 
-        CreateHistoricalLending(books[1], borrowers[0], daysAgoBorrowed: 14, daysAgoReturned: 2);
 
-        CreateHistoricalLending(books[3], borrowers[0], daysAgoBorrowed: 40, daysAgoReturned: 30);
+        CreateHistoricalLending(books[0], borrowers[0], 30, 15);
 
-        CreateHistoricalLending(books[4], borrowers[1], daysAgoBorrowed: 25, daysAgoReturned: 10);
+        CreateHistoricalLending(books[1], borrowers[0], 14, 2);
 
-        CreateHistoricalLending(books[5], borrowers[1], daysAgoBorrowed: 9, daysAgoReturned: 1);
+        CreateHistoricalLending(books[3], borrowers[0], 40, 30);
 
-        CreateHistoricalLending(books[6], borrowers[1], daysAgoBorrowed: 50, daysAgoReturned: 20);
+        CreateHistoricalLending(books[4], borrowers[1], 25, 10);
 
-        CreateHistoricalLending(books[0], borrowers[1], daysAgoBorrowed: 60, daysAgoReturned: 50);
+        CreateHistoricalLending(books[5], borrowers[1], 9, 1);
 
-        CreateHistoricalLending(books[2], borrowers[2], daysAgoBorrowed: 5, daysAgoReturned: null);
+        CreateHistoricalLending(books[6], borrowers[1], 50, 20);
+
+        CreateHistoricalLending(books[0], borrowers[1], 60, 50);
+
+        CreateHistoricalLending(books[2], borrowers[2], 5, null);
 
         await context.SaveChangesAsync();
     }
 
     /// <summary>
-    /// Helper method to simulate historical data. 
-    /// Since the Domain enforces DateTime.UtcNow, we use Reflection to set past dates.
-    /// This keeps the Domain pure while allowing realistic seed data.
+    ///     Helper method to simulate historical data.
+    ///     Since the Domain enforces DateTime.UtcNow, we use Reflection to set past dates.
+    ///     This keeps the Domain pure while allowing realistic seed data.
     /// </summary>
     private static void CreateHistoricalLending(Book book, Borrower borrower, int daysAgoBorrowed, int? daysAgoReturned)
     {
         var lendingActivity = book.BorrowCopy(borrower);
 
-        SetPrivateProperty(lendingActivity, nameof(LendingActivity.BorrowedDate), DateTime.UtcNow.AddDays(-daysAgoBorrowed));
+        SetPrivateProperty(lendingActivity, nameof(LendingActivity.BorrowedDate),
+            DateTime.UtcNow.AddDays(-daysAgoBorrowed));
 
         if (daysAgoReturned.HasValue)
         {
             lendingActivity.MarkAsReturned();
-            
-            SetPrivateProperty(lendingActivity, nameof(LendingActivity.ReturnedDate), DateTime.UtcNow.AddDays(-daysAgoReturned.Value));
+
+            SetPrivateProperty(lendingActivity, nameof(LendingActivity.ReturnedDate),
+                DateTime.UtcNow.AddDays(-daysAgoReturned.Value));
         }
     }
 
     private static void SetPrivateProperty<T>(T instance, string propertyName, object value)
     {
-        var propertyInfo = typeof(T).GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-        if (propertyInfo?.GetSetMethod(true) != null)
-        {
-            propertyInfo.SetValue(instance, value);
-        }
+        var propertyInfo = typeof(T).GetProperty(propertyName,
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        if (propertyInfo?.GetSetMethod(true) != null) propertyInfo.SetValue(instance, value);
     }
 }

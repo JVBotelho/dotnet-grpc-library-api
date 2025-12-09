@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using AutoFixture;
 using FluentAssertions;
@@ -7,21 +8,20 @@ using Grpc.Core;
 using LibrarySystem.Api.Dtos;
 using LibrarySystem.Contracts.Protos;
 using Moq;
-using Xunit;
 
 namespace LibrarySystem.IntegrationTests;
 
 public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
-    private readonly Mock<Library.LibraryClient> _grpcMock;
     private readonly Fixture _fixture = new();
+    private readonly Mock<Library.LibraryClient> _grpcMock;
 
     public BooksControllerTests(CustomWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
         _grpcMock = factory.LibraryClientMock;
-        
+
         // Clean slate for every test
         _grpcMock.Reset();
     }
@@ -51,7 +51,7 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        
+
         // Verify Location Header
         response.Headers.Location.Should().NotBeNull();
         response.Headers.Location!.OriginalString.Should().Contain("/api/Books/10");
@@ -68,9 +68,9 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
     {
         // Arrange
         var updateDto = _fixture.Create<UpdateBookDto>();
-        var expectedResponse = new BookResponse 
-        { 
-            Id = 1, 
+        var expectedResponse = new BookResponse
+        {
+            Id = 1,
             Title = updateDto.Title,
             Author = updateDto.Author
         };
@@ -134,7 +134,9 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
             BorrowCount = 50
         });
 
-        SetupGrpcCall(c => c.GetMostBorrowedBooksAsync(It.IsAny<GetMostBorrowedBooksRequest>(), It.IsAny<CallOptions>()), grpcResponse);
+        SetupGrpcCall(
+            c => c.GetMostBorrowedBooksAsync(It.IsAny<GetMostBorrowedBooksRequest>(), It.IsAny<CallOptions>()),
+            grpcResponse);
 
         // Act
         var response = await _client.GetAsync("/api/books/most-borrowed?count=2");
@@ -160,7 +162,8 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
             AvailableCopies = 7
         };
 
-        SetupGrpcCall(c => c.GetBookAvailabilityAsync(It.IsAny<GetBookAvailabilityRequest>(), It.IsAny<CallOptions>()), expectedResponse);
+        SetupGrpcCall(c => c.GetBookAvailabilityAsync(It.IsAny<GetBookAvailabilityRequest>(), It.IsAny<CallOptions>()),
+            expectedResponse);
 
         // Act
         var response = await _client.GetAsync("/api/books/1/availability");
@@ -184,7 +187,9 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
             BorrowedDate = Timestamp.FromDateTime(DateTime.UtcNow)
         });
 
-        SetupGrpcCall(c => c.GetUserLendingHistoryAsync(It.IsAny<GetUserLendingHistoryRequest>(), It.IsAny<CallOptions>()), grpcResponse);
+        SetupGrpcCall(
+            c => c.GetUserLendingHistoryAsync(It.IsAny<GetUserLendingHistoryRequest>(), It.IsAny<CallOptions>()),
+            grpcResponse);
 
         var start = DateTime.UtcNow.AddDays(-1).ToString("o");
         var end = DateTime.UtcNow.AddDays(1).ToString("o");
@@ -196,7 +201,7 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var history = await response.Content.ReadFromJsonAsync<List<UserLendingHistoryItem>>();
-        
+
         history.Should().HaveCount(1);
         history!.First().Book.Title.Should().Be("History 101");
     }
@@ -212,7 +217,9 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
             CommonBorrowersCount = 10
         });
 
-        SetupGrpcCall(c => c.GetAlsoBorrowedBooksAsync(It.IsAny<GetAlsoBorrowedBooksRequest>(), It.IsAny<CallOptions>()), grpcResponse);
+        SetupGrpcCall(
+            c => c.GetAlsoBorrowedBooksAsync(It.IsAny<GetAlsoBorrowedBooksRequest>(), It.IsAny<CallOptions>()),
+            grpcResponse);
 
         // Act
         var response = await _client.GetAsync("/api/books/1/also-borrowed");
@@ -221,7 +228,7 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var list = await response.Content.ReadFromJsonAsync<List<AlsoBorrowedBookInfo>>();
-        
+
         list!.First().Book.Title.Should().Be("Related Book");
     }
 
@@ -231,7 +238,8 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
         // Arrange
         var expectedResponse = new EstimateReadingRateResponse { PagesPerDay = 42.5 };
 
-        SetupGrpcCall(c => c.EstimateReadingRateAsync(It.IsAny<EstimateReadingRateRequest>(), It.IsAny<CallOptions>()), expectedResponse);
+        SetupGrpcCall(c => c.EstimateReadingRateAsync(It.IsAny<EstimateReadingRateRequest>(), It.IsAny<CallOptions>()),
+            expectedResponse);
 
         // Act
         var response = await _client.GetAsync("/api/books/1/reading-rate");
@@ -248,7 +256,7 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
 
     // Helper to setup AsyncUnaryCall for gRPC mocks (Reduces boilerplate)
     private void SetupGrpcCall<TResponse>(
-        System.Linq.Expressions.Expression<Func<Library.LibraryClient, AsyncUnaryCall<TResponse>>> expression, 
+        Expression<Func<Library.LibraryClient, AsyncUnaryCall<TResponse>>> expression,
         TResponse returnObject)
     {
         var call = new AsyncUnaryCall<TResponse>(

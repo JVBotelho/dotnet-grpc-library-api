@@ -1,18 +1,16 @@
 ﻿using LibrarySystem.Application;
 using LibrarySystem.Grpc.Services;
 using LibrarySystem.Persistence;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ConfigureEndpointDefaults(lo => lo.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2);
+    options.ConfigureEndpointDefaults(lo => lo.Protocols = HttpProtocols.Http2);
 });
 
-builder.Services.AddGrpc(options =>
-{
-    options.EnableDetailedErrors = true;
-});
+builder.Services.AddGrpc(options => { options.EnableDetailedErrors = true; });
 
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
@@ -24,7 +22,7 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        await SeedData.SeedDatabaseAsync(app); 
+        await app.SeedDatabaseAsync();
     }
     catch (Exception ex)
     {

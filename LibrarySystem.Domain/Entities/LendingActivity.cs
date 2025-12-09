@@ -3,7 +3,9 @@
 public class LendingActivity
 {
     // EF Core constructor
-    private LendingActivity() { }
+    private LendingActivity()
+    {
+    }
 
     internal LendingActivity(Book book, Borrower borrower)
     {
@@ -15,7 +17,7 @@ public class LendingActivity
     }
 
     public int Id { get; private set; }
-    
+
     public int BookId { get; private set; }
     public Book? Book { get; private set; }
 
@@ -27,11 +29,8 @@ public class LendingActivity
 
     public void MarkAsReturned()
     {
-        if (ReturnedDate.HasValue)
-        {
-            throw new InvalidOperationException("Book is already returned.");
-        }
-        
+        if (ReturnedDate.HasValue) throw new InvalidOperationException("Book is already returned.");
+
         ReturnedDate = DateTime.UtcNow;
     }
 }

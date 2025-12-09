@@ -17,8 +17,8 @@ public class UpdateBookCommandHandler : IRequestHandler<UpdateBookCommand, BookD
     public async Task<BookDto> Handle(UpdateBookCommand request, CancellationToken cancellationToken)
     {
         var book = await _bookRepository.GetByIdAsync(request.Id, cancellationToken);
-        
-        if (book is null) 
+
+        if (book is null)
             throw new KeyNotFoundException($"Book with ID {request.Id} not found.");
 
         SetProperty(book, nameof(Book.Title), request.Title);
@@ -31,8 +31,8 @@ public class UpdateBookCommandHandler : IRequestHandler<UpdateBookCommand, BookD
         await _bookRepository.SaveChangesAsync(cancellationToken);
 
         return new BookDto(
-            book.Id, book.Title, book.Author, book.PublicationYear, 
-            book.Pages, book.TotalCopies, 
+            book.Id, book.Title, book.Author, book.PublicationYear,
+            book.Pages, book.TotalCopies,
             book.TotalCopies - book.LendingActivities.Count(la => la.ReturnedDate == null)
         );
     }

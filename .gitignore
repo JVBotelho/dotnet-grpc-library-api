@@ -22,6 +22,7 @@ bld/
 .vs/
 .idea/
 *.sln.ide/
+.vscode/
 
 # Rider temporary files
 *.sln.iml
@@ -67,3 +68,8 @@ ClientBin/
 *.publishsettings
 node_modules/
 npm-debug.log
+logs/
+*.log
+*.json
+.DS_Store
+.env

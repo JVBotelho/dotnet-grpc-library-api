@@ -3,4 +3,4 @@ using MediatR;
 
 namespace LibrarySystem.Application.UseCases.Books.GetAll;
 
-public record GetAllBooksQuery() : IRequest<IEnumerable<BookDto>>;
+public record GetAllBooksQuery : IRequest<IEnumerable<BookDto>>;

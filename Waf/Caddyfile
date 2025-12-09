@@ -1,0 +1,64 @@
+{
+    order coraza_waf first
+    order rate_limit before basicauth
+}
+
+:80 {
+    rate_limit {
+                   zone ddos_protection {
+                                            key {remote_host}
+                                            events 1000
+                                            window 1m
+                                        }
+               }
+
+    coraza_waf {
+                   directives `
+            Include /etc/coraza/coraza.conf
+            Include /etc/coraza/crs/crs-setup.conf
+            Include /etc/coraza/crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+            Include /etc/coraza/crs/rules/REQUEST-901-INITIALIZATION.conf
+            Include /etc/coraza/crs/rules/REQUEST-911-METHOD-ENFORCEMENT.conf
+            Include /etc/coraza/crs/rules/REQUEST-913-SCANNER-DETECTION.conf
+            Include /etc/coraza/crs/rules/REQUEST-920-PROTOCOL-ENFORCEMENT.conf
+            Include /etc/coraza/crs/rules/REQUEST-921-PROTOCOL-ATTACK.conf
+            Include /etc/coraza/crs/rules/REQUEST-922-MULTIPART-ATTACK.conf
+            Include /etc/coraza/crs/rules/REQUEST-930-APPLICATION-ATTACK-LFI.conf
+            Include /etc/coraza/crs/rules/REQUEST-931-APPLICATION-ATTACK-RFI.conf
+            Include /etc/coraza/crs/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf
+            Include /etc/coraza/crs/rules/REQUEST-934-APPLICATION-ATTACK-GENERIC.conf
+            Include /etc/coraza/crs/rules/REQUEST-941-APPLICATION-ATTACK-XSS.conf
+            Include /etc/coraza/crs/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf
+            Include /etc/coraza/crs/rules/REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf
+            Include /etc/coraza/crs/rules/REQUEST-949-BLOCKING-EVALUATION.conf
+            Include /etc/coraza/crs/rules/RESPONSE-950-DATA-LEAKAGES.conf
+            Include /etc/coraza/crs/rules/RESPONSE-951-DATA-LEAKAGES-SQL.conf
+            Include /etc/coraza/crs/rules/RESPONSE-954-DATA-LEAKAGES-IIS.conf
+            Include /etc/coraza/crs/rules/RESPONSE-955-WEB-SHELLS.conf
+            Include /etc/coraza/crs/rules/RESPONSE-959-BLOCKING-EVALUATION.conf
+            Include /etc/coraza/crs/rules/RESPONSE-980-CORRELATION.conf
+        `
+               }
+
+    log {
+            output file /var/log/waf/access.json
+            format json
+        }
+
+    handle /health {
+                       respond "OK" 200
+                   }
+
+    handle /health/deep {
+                            rewrite * /health
+                            reverse_proxy library-api:8080
+                        }
+
+    handle /metrics {
+                        metrics
+                    }
+
+    reverse_proxy library-api:8080 {
+                                       header_up X-Real-IP {remote_host}
+                                   }
+}

@@ -27,7 +27,7 @@ public class GetBookByIdQueryHandlerTests
     public async Task Handle_WhenBookExists_ShouldReturnDto()
     {
         // Arrange
-        var book = new Book("Title", "Author", 2020, 100, 5); 
+        var book = new Book("Title", "Author", 2020, 100, 5);
         typeof(Book).GetProperty(nameof(Book.Id))!.SetValue(book, 10);
 
         _bookRepoMock.Setup(x => x.GetByIdAsync(10, It.IsAny<CancellationToken>()))

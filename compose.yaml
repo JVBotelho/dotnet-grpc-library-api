@@ -4,36 +4,46 @@
     build:
       context: .
       dockerfile: LibrarySystem.Api/Dockerfile
-    ports:
-      - "5000:8080"
+#    ports:
+#      - "5000:8080"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Production
       - GrpcSettings__ServiceUrl=http://library-grpc:8080
       - ASPNETCORE_URLS=http://+:8080
     depends_on:
       - library-grpc
+    networks:
+      - library-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   library-grpc:
     container_name: library-grpc
     build:
       context: .
       dockerfile: LibrarySystem.Grpc/Dockerfile
-    ports:
-      - "5001:8080" 
+#    ports:
+#      - "5001:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=librarydb;Username=user;Password=password
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=librarydb;Username=user;Password=@Ch4nge_M3
     depends_on:
       db:
-          condition: service_healthy
+        condition: service_healthy
+    networks:
+      - library-net
+    restart: unless-stopped
 
   db:
     container_name: library-db
     image: postgres:16.11-alpine
     environment:
       - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_PASSWORD=@Ch4nge_M3
       - POSTGRES_DB=librarydb
     ports:
       - "5432:5432"
@@ -44,6 +54,34 @@
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - library-net
+    restart: always
+      
+  waf:
+    build:
+      context: ./waf
+      dockerfile: Dockerfile
+    container_name: library-waf
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "9090:9090"
+    environment:
+      - BACKEND_HOST=library-api:8080
+    volumes:
+      - ./Waf/Caddyfile:/etc/caddy/Caddyfile
+      - ./Waf/coraza.conf:/etc/coraza/coraza.conf
+      - ./Waf/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:/etc/coraza/crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+      - ./logs/waf:/var/log/waf
+    depends_on:
+      - library-api
+    networks:
+      - library-net
 
 volumes:
   postgres_data:
+    
+networks:
+  library-net:
+    driver: bridge

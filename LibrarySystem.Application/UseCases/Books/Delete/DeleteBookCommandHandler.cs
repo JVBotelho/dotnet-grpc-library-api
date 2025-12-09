@@ -15,8 +15,8 @@ public class DeleteBookCommandHandler : IRequestHandler<DeleteBookCommand, Unit>
     public async Task<Unit> Handle(DeleteBookCommand request, CancellationToken cancellationToken)
     {
         var book = await _bookRepository.GetByIdAsync(request.Id, cancellationToken);
-        
-        if (book is null) 
+
+        if (book is null)
             throw new KeyNotFoundException($"Book with ID {request.Id} not found.");
 
         _bookRepository.Remove(book);

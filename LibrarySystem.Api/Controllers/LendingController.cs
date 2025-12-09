@@ -29,8 +29,8 @@ public class LendingController : ControllerBase
             var response = await _grpcClient.CreateLendingAsync(request);
             return CreatedAtAction(nameof(CreateLending), new { id = response.Id }, response);
         }
-        catch (RpcException ex) when (ex.StatusCode == global::Grpc.Core.StatusCode.NotFound ||
-                                      ex.StatusCode == global::Grpc.Core.StatusCode.FailedPrecondition)
+        catch (RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.NotFound ||
+                                      ex.StatusCode == Grpc.Core.StatusCode.FailedPrecondition)
         {
             return BadRequest(ex.Status.Detail);
         }
@@ -45,8 +45,8 @@ public class LendingController : ControllerBase
             var response = await _grpcClient.ReturnBookAsync(request);
             return Ok(response);
         }
-        catch (RpcException ex) when (ex.StatusCode == global::Grpc.Core.StatusCode.NotFound ||
-                                      ex.StatusCode == global::Grpc.Core.StatusCode.FailedPrecondition)
+        catch (RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.NotFound ||
+                                      ex.StatusCode == Grpc.Core.StatusCode.FailedPrecondition)
         {
             return BadRequest(ex.Status.Detail);
         }

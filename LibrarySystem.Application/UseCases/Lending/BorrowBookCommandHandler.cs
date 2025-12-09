@@ -10,7 +10,7 @@ public class BorrowBookCommandHandler : IRequestHandler<BorrowBookCommand, Lendi
     private readonly IBorrowerRepository _borrowerRepository;
 
     public BorrowBookCommandHandler(
-        IBookRepository bookRepository, 
+        IBookRepository bookRepository,
         IBorrowerRepository borrowerRepository)
     {
         _bookRepository = bookRepository;
@@ -20,11 +20,11 @@ public class BorrowBookCommandHandler : IRequestHandler<BorrowBookCommand, Lendi
     public async Task<LendingDto> Handle(BorrowBookCommand request, CancellationToken cancellationToken)
     {
         var book = await _bookRepository.GetByIdAsync(request.BookId, cancellationToken);
-        if (book is null) 
+        if (book is null)
             throw new KeyNotFoundException($"Book with ID {request.BookId} not found.");
 
         var borrower = await _borrowerRepository.GetByIdAsync(request.BorrowerId, cancellationToken);
-        if (borrower is null) 
+        if (borrower is null)
             throw new KeyNotFoundException($"Borrower with ID {request.BorrowerId} not found.");
 
         var lendingActivity = book.BorrowCopy(borrower);

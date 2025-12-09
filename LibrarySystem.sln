@@ -8,6 +8,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 		.gitignore = .gitignore
 		compose.tests.yaml = compose.tests.yaml
+		Dockerfile.tests = Dockerfile.tests
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibrarySystem.Grpc", "LibrarySystem.Grpc\LibrarySystem.Grpc.csproj", "{6F9B1775-5BF8-4B60-A1BA-74ADEEAC19EA}"
@@ -25,6 +26,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibrarySystem.Domain", "LibrarySystem.Domain\LibrarySystem.Domain.csproj", "{FD033796-73C5-43BE-ABAC-382562AF316D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibrarySystem.Application", "LibrarySystem.Application\LibrarySystem.Application.csproj", "{F987F2F1-5280-40A3-AA72-CA2E5EE4A112}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Waf", "Waf", "{47CE1A78-4280-41EF-B47C-863047844740}"
+	ProjectSection(SolutionItems) = preProject
+		Waf\Dockerfile = Waf\Dockerfile
+		Waf\coraza.conf = Waf\coraza.conf
+		Waf\Caddyfile = Waf\Caddyfile
+		Waf\REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf = Waf\REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -68,5 +77,8 @@ Global
 		{F987F2F1-5280-40A3-AA72-CA2E5EE4A112}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F987F2F1-5280-40A3-AA72-CA2E5EE4A112}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F987F2F1-5280-40A3-AA72-CA2E5EE4A112}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{47CE1A78-4280-41EF-B47C-863047844740} = {ADE93638-50A9-4EFB-9985-9F3FC953E581}
 	EndGlobalSection
 EndGlobal

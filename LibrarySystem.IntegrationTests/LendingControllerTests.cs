@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Json;
 using AutoFixture;
 using FluentAssertions;
@@ -7,15 +8,14 @@ using Grpc.Core;
 using LibrarySystem.Api.Dtos;
 using LibrarySystem.Contracts.Protos;
 using Moq;
-using Xunit;
 
 namespace LibrarySystem.IntegrationTests;
 
 public class LendingControllerTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
-    private readonly Mock<Library.LibraryClient> _grpcMock;
     private readonly Fixture _fixture = new();
+    private readonly Mock<Library.LibraryClient> _grpcMock;
 
     public LendingControllerTests(CustomWebApplicationFactory factory)
     {
@@ -37,19 +37,20 @@ public class LendingControllerTests : IClassFixture<CustomWebApplicationFactory>
             BorrowedDate = Timestamp.FromDateTime(DateTime.UtcNow)
         };
 
-        SetupGrpcCall(c => c.CreateLendingAsync(It.IsAny<CreateLendingRequest>(), It.IsAny<CallOptions>()), expectedResponse);
+        SetupGrpcCall(c => c.CreateLendingAsync(It.IsAny<CreateLendingRequest>(), It.IsAny<CallOptions>()),
+            expectedResponse);
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/lending", createDto);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        
+
         var lending = await response.Content.ReadFromJsonAsync<LendingActivityResponse>();
         lending.Should().NotBeNull();
         lending!.Id.Should().Be(10);
         lending.BookId.Should().Be(createDto.BookId);
-        
+
         response.Headers.Location.Should().NotBeNull();
     }
 
@@ -81,13 +82,13 @@ public class LendingControllerTests : IClassFixture<CustomWebApplicationFactory>
 
         // Assert
         returnResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         var returnedLending = await returnResponse.Content.ReadFromJsonAsync<LendingActivityResponse>();
         returnedLending.Should().NotBeNull();
         returnedLending!.ReturnedDate.Should().NotBeNull();
         returnedLending.Id.Should().Be(lendingId);
     }
-    
+
     [Fact]
     public async Task ReturnBook_WhenAlreadyReturned_ReturnsBadRequest()
     {
@@ -105,7 +106,7 @@ public class LendingControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     private void SetupGrpcCall<TResponse>(
-        System.Linq.Expressions.Expression<Func<Library.LibraryClient, AsyncUnaryCall<TResponse>>> expression, 
+        Expression<Func<Library.LibraryClient, AsyncUnaryCall<TResponse>>> expression,
         TResponse returnObject)
     {
         var call = new AsyncUnaryCall<TResponse>(

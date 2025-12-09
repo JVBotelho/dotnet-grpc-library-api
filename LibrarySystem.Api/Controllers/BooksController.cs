@@ -26,7 +26,7 @@ public class BooksController : ControllerBase
             var reply = await _grpcClient.GetBookByIdAsync(request);
             return Ok(reply);
         }
-        catch (RpcException ex) when (ex.StatusCode == global::Grpc.Core.StatusCode.NotFound)
+        catch (RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.NotFound)
         {
             return NotFound($"Book not found id: {id}");
         }
@@ -78,7 +78,7 @@ public class BooksController : ControllerBase
             var updatedBook = await _grpcClient.UpdateBookAsync(request);
             return Ok(updatedBook);
         }
-        catch (RpcException ex) when (ex.StatusCode == global::Grpc.Core.StatusCode.NotFound)
+        catch (RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.NotFound)
         {
             return NotFound(ex.Status.Detail);
         }
@@ -92,7 +92,7 @@ public class BooksController : ControllerBase
             await _grpcClient.DeleteBookAsync(new DeleteBookRequest { Id = id });
             return NoContent();
         }
-        catch (RpcException ex) when (ex.StatusCode == global::Grpc.Core.StatusCode.NotFound)
+        catch (RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.NotFound)
         {
             return NotFound(ex.Status.Detail);
         }
@@ -149,7 +149,7 @@ public class BooksController : ControllerBase
             var response = await _grpcClient.EstimateReadingRateAsync(request);
             return Ok(response);
         }
-        catch (RpcException ex) when (ex.StatusCode == global::Grpc.Core.StatusCode.NotFound)
+        catch (RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.NotFound)
         {
             return NotFound(ex.Status.Detail);
         }

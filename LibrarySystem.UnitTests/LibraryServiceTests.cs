@@ -23,13 +23,13 @@ public class LibraryServiceTests
     public LibraryServiceTests()
     {
         _fixture = new Fixture();
-        
+
         _fixture.Behaviors.OfType<ThrowingRecursionBehavior>().ToList()
             .ForEach(b => _fixture.Behaviors.Remove(b));
         _fixture.Behaviors.Add(new OmitOnRecursionBehavior());
 
         _senderMock = new Mock<ISender>();
-        
+
         _sut = new LibraryService(_senderMock.Object);
     }
 
@@ -38,8 +38,8 @@ public class LibraryServiceTests
     {
         // Arrange
         var bookId = 1;
-        var bookDto = _fixture.Create<BookDto>(); 
-        
+        var bookDto = _fixture.Create<BookDto>();
+
         _senderMock
             .Setup(x => x.Send(It.Is<GetBookByIdQuery>(q => q.Id == bookId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(bookDto);
@@ -60,7 +60,7 @@ public class LibraryServiceTests
     {
         // Arrange
         var bookId = 99;
-        
+
         _senderMock
             .Setup(x => x.Send(It.IsAny<GetBookByIdQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((BookDto?)null);
@@ -91,12 +91,12 @@ public class LibraryServiceTests
         // Assert
         response.Should().NotBeNull();
         response.Title.Should().Be(expectedDto.Title);
-        
+
         // Verify
         _senderMock.Verify(x => x.Send(
-            It.Is<CreateBookCommand>(c => 
-                c.Title == request.Title && 
-                c.Author == request.Author), 
+            It.Is<CreateBookCommand>(c =>
+                c.Title == request.Title &&
+                c.Author == request.Author),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

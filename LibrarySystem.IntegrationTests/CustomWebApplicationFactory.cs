@@ -1,4 +1,5 @@
-﻿using LibrarySystem.Contracts.Protos;
+﻿using Grpc.Net.ClientFactory;
+using LibrarySystem.Contracts.Protos;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -20,8 +21,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll(typeof(Library.LibraryClient));
-            services.RemoveAll(typeof(Grpc.Net.ClientFactory.GrpcClientFactory));
-            
+            services.RemoveAll(typeof(GrpcClientFactory));
+
             services.AddSingleton(LibraryClientMock.Object);
         });
     }
