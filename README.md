@@ -67,31 +67,30 @@ Security is a first-class citizen in this architecture. The system is protected 
 
 You don't need .NET installed to run the system. Docker handles everything.
 
-1. **Clone and Start:**
-   ```bash
-   docker-compose up --build
-   ```
+1.  **Clone and Start:**
+    ```bash
+    docker-compose up --build
+    ```
 
-2. **Access the System:**
-    * **Swagger UI (API):** `http://localhost:5000/swagger`
-    * **API Internal URL:** `http://localhost:5000`
+2.  **Access the System:**
+    * **Public API (WAF Protected):** `http://localhost:80`
+    * **Swagger UI:** `http://localhost:80/swagger`
+    * **WAF Logs:** `./logs/waf/audit.json`
     * **gRPC Service:** `http://localhost:5001` (Internal Docker Network)
 
-   *Note: The system automatically seeds the database with sample books and historical lending data on startup.*
+    *Note: The system automatically seeds the database with sample books and historical lending data on startup.*
 
 ---
 
 ## 🧪 Running Tests
 
-We prioritize **Developer Experience**. You can run the entire test suite (Unit + Integration) inside a container
-without setting up a local environment.
+We prioritize **Developer Experience**. You can run the entire test suite (Unit + Integration) inside a container without setting up a local environment.
 
 ### Test Strategy
 
 * **Domain Tests:** Verify complex business rules (e.g., "Cannot borrow if copies < 1") in isolation.
 * **Application Tests:** Verify the orchestration of Use Cases and Repository calls using Mocks.
-* **Integration Tests:** Verify the API Gateway correctly maps HTTP requests to gRPC calls using `WebApplicationFactory`
-  and gRPC Mocks.
+* **Integration Tests:** Verify the API Gateway correctly maps HTTP requests to gRPC calls using `WebApplicationFactory` and gRPC Mocks.
 
 ### Command to Run Tests
 
