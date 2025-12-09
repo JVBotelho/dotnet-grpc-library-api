@@ -9,6 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 		compose.tests.yaml = compose.tests.yaml
 		Dockerfile.tests = Dockerfile.tests
+		.env.example = .env.example
+		.github\workflows\main.yml = .github\workflows\main.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibrarySystem.Grpc", "LibrarySystem.Grpc\LibrarySystem.Grpc.csproj", "{6F9B1775-5BF8-4B60-A1BA-74ADEEAC19EA}"
@@ -33,6 +35,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Waf", "Waf", "{47CE1A78-428
 		Waf\coraza.conf = Waf\coraza.conf
 		Waf\Caddyfile = Waf\Caddyfile
 		Waf\REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf = Waf\REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{3D819DEA-7162-4054-997B-B19FB4FDB23D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{9B300161-5AE5-4AD1-8615-18A9322D799A}"
+	ProjectSection(SolutionItems) = preProject
+		Docs\adr\001-waf-strategy.md = Docs\adr\001-waf-strategy.md
 	EndProjectSection
 EndProject
 Global
@@ -80,5 +89,7 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{47CE1A78-4280-41EF-B47C-863047844740} = {ADE93638-50A9-4EFB-9985-9F3FC953E581}
+		{3D819DEA-7162-4054-997B-B19FB4FDB23D} = {ADE93638-50A9-4EFB-9985-9F3FC953E581}
+		{9B300161-5AE5-4AD1-8615-18A9322D799A} = {3D819DEA-7162-4054-997B-B19FB4FDB23D}
 	EndGlobalSection
 EndGlobal

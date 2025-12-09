@@ -30,7 +30,7 @@
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=librarydb;Username=user;Password=@Ch4nge_M3
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=librarydb;Username=user;Password=${DB_PASSWORD:-changeme_in_prod}
     depends_on:
       db:
         condition: service_healthy
@@ -43,7 +43,7 @@
     image: postgres:16.11-alpine
     environment:
       - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=@Ch4nge_M3
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme_in_prod}
       - POSTGRES_DB=librarydb
     ports:
       - "5432:5432"

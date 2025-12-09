@@ -5,6 +5,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![gRPC](https://img.shields.io/badge/gRPC-244c5a?style=for-the-badge&logo=grpc&logoColor=white)
 ![Coraza WAF](https://img.shields.io/badge/Coraza_WAF-Protected-green?style=for-the-badge&logo=shield&logoColor=white)
+![Tests](https://img.shields.io/github/actions/workflow/status/JVBotelho/dotnet-grpc-library-api/main.yml?label=Tests&logo=github&style=for-the-badge)
 
 A high-performance, distributed library management system designed to demonstrate **Modern Software Architecture** principles.
 
