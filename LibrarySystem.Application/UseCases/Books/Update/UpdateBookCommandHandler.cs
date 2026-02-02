@@ -21,11 +21,13 @@ public class UpdateBookCommandHandler : IRequestHandler<UpdateBookCommand, BookD
         if (book is null)
             throw new KeyNotFoundException($"Book with ID {request.Id} not found.");
 
-        SetProperty(book, nameof(Book.Title), request.Title);
-        SetProperty(book, nameof(Book.Author), request.Author);
-        SetProperty(book, nameof(Book.PublicationYear), request.PublicationYear);
-        SetProperty(book, nameof(Book.Pages), request.Pages);
-        SetProperty(book, nameof(Book.TotalCopies), request.TotalCopies);
+        book.UpdateDetails(
+            request.Title,
+            request.Author,
+            request.PublicationYear,
+            request.Pages,
+            request.TotalCopies
+        );
 
         _bookRepository.Update(book);
         await _bookRepository.SaveChangesAsync(cancellationToken);
