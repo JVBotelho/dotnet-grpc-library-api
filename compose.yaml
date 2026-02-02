@@ -34,6 +34,8 @@
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - ./logs/waf:/var/log/waf:ro
     networks:
       - library-net
     restart: unless-stopped
