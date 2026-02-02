@@ -25,11 +25,11 @@ public class Book
     }
 
     public int Id { get; private set; }
-    public string Title { get; } = string.Empty;
+    public string Title { get; private set; } = string.Empty;
     public string Author { get; private set; } = string.Empty;
     public int PublicationYear { get; private set; }
     public int Pages { get; private set; }
-    public int TotalCopies { get; }
+    public int TotalCopies { get; private set; }
 
     // Public read-only access
     public IReadOnlyCollection<LendingActivity> LendingActivities => _lendingActivities.AsReadOnly();
@@ -59,5 +59,18 @@ public class Book
         if (lending == null) throw new ArgumentException("Lending record not found.", nameof(lendingId));
 
         lending.MarkAsReturned();
+    }
+    
+    public void UpdateDetails(string title, string author, int year, int pages, int totalCopies)
+    {
+        if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title cannot be empty.", nameof(title));
+        if (string.IsNullOrWhiteSpace(author)) throw new ArgumentException("Author cannot be empty.", nameof(author));
+        if (totalCopies < 0) throw new ArgumentException("Total copies cannot be negative.", nameof(totalCopies));
+
+        Title = title;
+        Author = author;
+        PublicationYear = year;
+        Pages = pages;
+        TotalCopies = totalCopies;
     }
 }
