@@ -16,7 +16,7 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" /> <RowDefinition Height="*" />    <RowDefinition Height="Auto" /> </Grid.RowDefinitions>
+            <RowDefinition Height="Auto" /> <RowDefinition Height="2*" />    <RowDefinition Height="Auto" /> <RowDefinition Height="1*" /> </Grid.RowDefinitions>
 
         <Border Background="#252526" Padding="10" BorderBrush="#3F3F46" BorderThickness="0,0,0,1">
             <StackPanel Orientation="Horizontal">
@@ -193,10 +193,54 @@
             </Border>
         </Grid>
 
-        <Border Grid.Row="2" Background="#007ACC" Padding="5">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="{Binding StatusMessage}" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
-            </StackPanel>
+        <Border Grid.Row="2" Background="#0F0F0F" BorderBrush="#333" BorderThickness="0,1,0,0">
+            <Grid DataContext="{Binding WafLogs}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/> <RowDefinition Height="*"/>    </Grid.RowDefinitions>
+
+                <Border Background="#1E1E1E" Padding="10,5">
+                    <Grid>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="SECURITY CONSOLE (WAF)" Foreground="#CCC" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding StatusText}" Margin="15,0,0,0" VerticalAlignment="Center" 
+                                       FontSize="11" Foreground="#00FF00" FontFamily="Consolas"/>
+                        </StackPanel>
+                        
+                        <ToggleButton IsChecked="{Binding IsMonitoring}" 
+                                      Content="{Binding MonitoringButtonText}" 
+                                      HorizontalAlignment="Right" Width="120" Height="24"
+                                      Background="#333" Foreground="White" BorderThickness="0"/>
+                         </Grid>
+                </Border>
+
+                <ListBox Grid.Row="1" ItemsSource="{Binding Logs}" 
+                         Background="#0F0F0F" BorderThickness="0" 
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>  <ColumnDefinition Width="100"/> <ColumnDefinition Width="*"/>   </Grid.ColumnDefinitions>
+
+                                <TextBlock Text="{Binding Timestamp}" Foreground="#666" FontFamily="Consolas" FontSize="11"/>
+                                
+                                <TextBlock Grid.Column="1" Text="{Binding Action}" FontWeight="Bold" FontFamily="Consolas" FontSize="11">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#00FF00"/> <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Action}" Value="Blocked/Alert">
+                                                    <Setter Property="Foreground" Value="#FF3333"/> </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Grid.Column="2" Text="{Binding Details}" Foreground="#DDD" FontFamily="Consolas" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
         </Border>
     </Grid>
 </Window>
