@@ -23,14 +23,18 @@ public partial class MainViewModel : ObservableObject
     // Injeção de Dependência do Inspector (Painel Lateral)
     [ObservableProperty]
     private InspectorViewModel _inspector;
+    
+    [ObservableProperty]
+    private WafLogViewModel _wafLogs;
 
     [ObservableProperty]
     private string _statusMessage = "Ready";
 
-    public MainViewModel(Library.LibraryClient client, InspectorViewModel inspector)
+    public MainViewModel(Library.LibraryClient client, InspectorViewModel inspector, WafLogViewModel wafLogs)
     {
         _client = client;
         _inspector = inspector;
+        _wafLogs = wafLogs;
     }
     
     [RelayCommand]

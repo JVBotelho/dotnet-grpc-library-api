@@ -24,8 +24,11 @@ public partial class App : Application
                 services.AddSingleton(services => 
                 {
                     var channel = GrpcChannel.ForAddress("http://localhost:5001"); 
-                    return new Library.LibraryClient(channel);
+                    return channel;
                 });
+                
+                services.AddSingleton(s => new Library.LibraryClient(s.GetRequiredService<GrpcChannel>()));
+                services.AddSingleton(s => new Security.SecurityClient(s.GetRequiredService<GrpcChannel>()));
 
                 services.AddSingleton<ILogTailerService, FileLogTailerService>();
                 services.AddSingleton<IGraphDataService, GrpcGraphDataService>();
@@ -33,6 +36,7 @@ public partial class App : Application
                 services.AddTransient<MainViewModel>();
                 services.AddTransient<InspectorViewModel>();
                 services.AddTransient<GraphViewModel>();
+                services.AddTransient<WafLogViewModel>();
 
                 services.AddSingleton<MainWindow>(s => new MainWindow()
                 {
