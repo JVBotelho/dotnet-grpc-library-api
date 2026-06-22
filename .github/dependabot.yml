@@ -1,0 +1,45 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      grpc:
+        patterns:
+          - "Grpc.*"
+          - "Google.Protobuf"
+      efcore:
+        patterns:
+          - "Microsoft.EntityFrameworkCore*"
+          - "Npgsql.EntityFrameworkCore*"
+      aspnetcore:
+        patterns:
+          - "Microsoft.AspNetCore.*"
+          - "Microsoft.Extensions.*"
+          - "Swashbuckle.*"
+      test:
+        patterns:
+          - "xunit*"
+          - "Moq"
+          - "FluentAssertions"
+          - "coverlet.*"
+          - "Microsoft.NET.Test.Sdk"
+          - "Testcontainers.*"
+          - "AutoFixture"
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3

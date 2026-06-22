@@ -58,6 +58,39 @@ Security is a first-class citizen in this architecture. The system is protected 
 
 ---
 
+## 🔍 Inspector (WPF Desktop Tool)
+
+A standalone WPF desktop application for real-time topology exploration and WAF log monitoring. Designed as a portfolio showcase of WPF/MVVM architecture — documented in [ADR-002](docs/ADR-002-WPF-Client-Architecture.md).
+
+### Features
+
+- **Graph canvas** — live topology of books and authors fetched via gRPC, rendered as interactive draggable nodes with typed colour-coded rails (violet for books, amber for authors)
+- **Inspector panel** — click any node to inspect and inline-edit book metadata; changes are persisted through gRPC → PostgreSQL round-trip
+- **WAF console** — one-click streaming of WAF audit logs from the Coraza layer with severity dot indicators (info / warning / critical)
+- **Toast notifications** — non-blocking feedback for every service call outcome
+
+### Architecture (ADR-002)
+
+| Layer | Details |
+|---|---|
+| Presentation | WPF + `CommunityToolkit.Mvvm` 8.4 (source-generated `[ObservableProperty]` / `[RelayCommand]`) |
+| Services | `IGraphDataService` / `ILogTailerService` interfaces — decoupled from gRPC clients, fully mockable |
+| Messaging | `WeakReferenceMessenger` for node-selection events (no MainWindow coupling) |
+| Notifications | `INotificationService` singleton — auto-dismissing toast overlay, no `MessageBox.Show` in ViewModels |
+| Theming | `InspectorTheme.xaml` ResourceDictionary — electric violet `#7C16FF` design tokens |
+| Tests | `LibrarySystem.Tools.UnitTests` — xUnit + Moq, targeting `net10.0-windows` |
+
+### Running the Inspector
+
+Requires Docker running (the Inspector connects to the gRPC service on `localhost:5001`).
+
+```bash
+docker-compose up -d
+# Then launch LibrarySystem.Tools from Visual Studio / Rider
+```
+
+---
+
 ## 🛠️ Getting Started
 
 ### Prerequisites

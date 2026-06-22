@@ -54,8 +54,9 @@ Desktop.ini
 # Docker
 docker-compose.override.yml
 
-# Secrets
+# Secrets — use appsettings.Development.json.example for safe templates
 secrets.json
+appsettings.Development.json
 
 # Other
 *.Cache
@@ -76,3 +77,9 @@ logs/
 
 .design*
 *.zip
+
+# Code coverage output
+coverage/
+coverage-wpf/
+*.cobertura.xml
+code-coverage-results.md

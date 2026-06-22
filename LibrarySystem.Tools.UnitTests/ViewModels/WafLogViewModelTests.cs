@@ -35,8 +35,8 @@ public class WafLogViewModelTests
     {
         var entries = new[]
         {
-            new WafLogEntry { Action = "ALLOWED", RequestPath = "/api/books", Ip = "10.0.0.1" },
-            new WafLogEntry { Action = "BLOCKED", RequestPath = "/etc/passwd", Ip = "1.2.3.4" },
+            new WafLogEntry { Action = "ALLOWED", RequestUri = "/api/books", ClientIp = "10.0.0.1" },
+            new WafLogEntry { Action = "BLOCKED", RequestUri = "/etc/passwd", ClientIp = "1.2.3.4" },
         };
         var logMock = new Mock<ILogTailerService>();
         logMock.Setup(x => x.WatchAsync(It.IsAny<CancellationToken>()))
@@ -71,6 +71,63 @@ public class WafLogViewModelTests
         var sut = new WafLogViewModel(Mock.Of<ILogTailerService>());
 
         sut.StatusText.Should().Be("Security Stream Offline");
+    }
+
+    [Fact]
+    public async Task StartMonitoring_ServiceThrows_SetsConnectionLostStatus()
+    {
+        var logMock = new Mock<ILogTailerService>();
+        logMock.Setup(x => x.WatchAsync(It.IsAny<CancellationToken>()))
+               .Returns<CancellationToken>(static ct => ThrowingStream(ct));
+
+        var sut = new WafLogViewModel(logMock.Object);
+        sut.IsMonitoring = true;
+
+        await Task.Delay(50);
+
+        sut.StatusText.Should().StartWith("Connection Lost:");
+        sut.IsMonitoring.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task StartMonitoring_MoreThan100Logs_TrimsCollectionTo100()
+    {
+        var entries = Enumerable.Range(1, 101)
+            .Select(i => new WafLogEntry { Action = "ALLOWED", RequestUri = $"/api/{i}" });
+
+        var logMock = new Mock<ILogTailerService>();
+        logMock.Setup(x => x.WatchAsync(It.IsAny<CancellationToken>()))
+               .Returns<CancellationToken>(ct => entries.ToAsyncEnumerable(ct));
+
+        var sut = new WafLogViewModel(logMock.Object);
+        sut.IsMonitoring = true;
+
+        await Task.Delay(100);
+
+        sut.Logs.Should().HaveCount(100);
+    }
+
+    [Fact]
+    public void Dispose_StopsMonitoringAndReleasesResources()
+    {
+        var logMock = new Mock<ILogTailerService>();
+        logMock.Setup(x => x.WatchAsync(It.IsAny<CancellationToken>()))
+               .Returns<CancellationToken>(static ct => EmptyStream(ct));
+
+        var sut = new WafLogViewModel(logMock.Object);
+        sut.IsMonitoring = true;
+
+        sut.Dispose();
+
+        sut.StatusText.Should().Be("Stream Paused");
+    }
+
+    private static async IAsyncEnumerable<WafLogEntry> ThrowingStream(
+        [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        await Task.Yield();
+        throw new InvalidOperationException("Simulated service failure");
+        yield break; // unreachable — satisfies the compiler that this is an async iterator
     }
 
     private static async IAsyncEnumerable<WafLogEntry> EmptyStream(

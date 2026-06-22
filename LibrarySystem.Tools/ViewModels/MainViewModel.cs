@@ -12,6 +12,7 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly IGraphDataService _graphService;
     private GraphNode? _currentlySelectedNode;
+    private readonly Random _random = new();
 
     [ObservableProperty] private ObservableCollection<GraphNode> _nodes = new();
     [ObservableProperty] private ObservableCollection<GraphEdge> _edges = new();
@@ -65,20 +66,21 @@ public partial class MainViewModel : ObservableObject
             Edges.Clear();
 
             var authorNodes = new Dictionary<string, GraphNode>();
-            var random = new Random();
+            var authorIndex = 0;
 
             foreach (var book in books)
             {
                 if (!authorNodes.TryGetValue(book.Author, out var authorNode))
                 {
+                    // Negative IDs for synthetic author nodes — never collide with domain book IDs.
                     authorNode = new GraphNode
                     {
-                        Id       = random.Next(10, 999),
+                        Id       = -(++authorIndex),
                         Title    = book.Author,
                         Subtitle = "Author",
                         NodeType = "Author",
-                        X        = random.Next(50, 300),
-                        Y        = random.Next(50, 500),
+                        X        = _random.Next(50, 300),
+                        Y        = _random.Next(50, 500),
                     };
                     Nodes.Add(authorNode);
                     authorNodes[book.Author] = authorNode;
@@ -90,8 +92,8 @@ public partial class MainViewModel : ObservableObject
                     Title        = book.Title,
                     Subtitle     = $"{book.Author} · {book.PublicationYear}",
                     NodeType     = "Book",
-                    X            = random.Next(400, 1100),
-                    Y            = random.Next(50, 600),
+                    X            = _random.Next(400, 1100),
+                    Y            = _random.Next(50, 600),
                     OriginalData = book
                 };
                 Nodes.Add(bookNode);

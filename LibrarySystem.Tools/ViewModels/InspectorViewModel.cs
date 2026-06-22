@@ -52,12 +52,18 @@ public partial class InspectorViewModel : ObservableObject
 
         try
         {
+            if (!int.TryParse(EditYear, out var year) || year < 1)
+            {
+                _notifications.ShowError("Validation failed", "Publication year must be a positive number.");
+                return;
+            }
+
             var request = new UpdateBookRequest
             {
                 Id              = SelectedNode.Id,
                 Title           = EditTitle,
                 Author          = EditAuthor,
-                PublicationYear = int.TryParse(EditYear, out var y) ? y : 0,
+                PublicationYear = year,
                 Pages           = SelectedNode.OriginalData.Pages,
                 TotalCopies     = SelectedNode.OriginalData.TotalCopies
             };

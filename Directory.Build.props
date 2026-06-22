@@ -1,0 +1,24 @@
+<Project>
+  <!--
+    MinVer derives the assembly/package version from git tags.
+    Tag the repo with v<major>.<minor>.<patch> to cut a release.
+    Between tags: v1.0.0-alpha.0.5 (pre-release + commit height).
+    Docs: https://github.com/adamralph/minver
+  -->
+  <ItemGroup>
+    <PackageReference Include="MinVer" PrivateAssets="All" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <!-- Use "alpha.0" pre-release identifiers for untagged commits on feature branches. -->
+    <MinVerDefaultPreReleaseIdentifiers>alpha.0</MinVerDefaultPreReleaseIdentifiers>
+  </PropertyGroup>
+
+  <!-- Skip versioning for test harnesses and infrastructure tooling — not published artifacts. -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.UnitTests')) Or
+                            $(MSBuildProjectName.EndsWith('.IntegrationTests')) Or
+                            $(MSBuildProjectName.Contains('WarmupTasks'))">
+    <MinVerSkip>true</MinVerSkip>
+  </PropertyGroup>
+</Project>

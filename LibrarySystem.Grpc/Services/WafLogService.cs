@@ -22,21 +22,22 @@ public class WafLogService : Security.SecurityBase
 
         if (!File.Exists(LogPath))
         {
-            await responseStream.WriteAsync(new WafLogEntry 
-            { 
+            await responseStream.WriteAsync(new WafLogEntry
+            {
                 Timestamp = DateTime.UtcNow.ToString("O"),
-                Details = $"Log file not found at {LogPath}. Waiting for traffic..." 
+                Details = $"Log file not found at {LogPath}. Is the WAF container running?"
             });
+            return;
         }
 
-        using var fileStream = new FileStream(LogPath, FileMode.OpenOrCreate, FileAccess.Read, FileShare.ReadWrite);
+        using var fileStream = new FileStream(LogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         using var reader = new StreamReader(fileStream, Encoding.UTF8);
 
         fileStream.Seek(0, SeekOrigin.End);
 
         while (!context.CancellationToken.IsCancellationRequested)
         {
-            var line = await reader.ReadLineAsync();
+            var line = await reader.ReadLineAsync(context.CancellationToken);
 
             if (line != null)
             {
@@ -48,7 +49,8 @@ public class WafLogService : Security.SecurityBase
             }
             else
             {
-                await Task.Delay(500, context.CancellationToken);
+                try { await Task.Delay(500, context.CancellationToken); }
+                catch (OperationCanceledException) { break; }
             }
         }
         

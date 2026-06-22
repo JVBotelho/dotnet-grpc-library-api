@@ -1,11 +1,13 @@
 using System.Windows;
+using Grpc.Core.Interceptors;
+using Grpc.Net.Client;
 using LibrarySystem.Contracts.Protos;
 using LibrarySystem.Tools.Services;
 using LibrarySystem.Tools.Services.Core;
 using LibrarySystem.Tools.ViewModels;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Grpc.Net.Client;
 
 namespace LibrarySystem.Tools;
 
@@ -16,15 +18,25 @@ public partial class App : Application
     public App()
     {
         _host = Host.CreateDefaultBuilder()
-            .ConfigureServices((_, services) =>
+            .ConfigureAppConfiguration(cfg => cfg.AddJsonFile("appsettings.json", optional: false))
+            .ConfigureServices((ctx, services) =>
             {
-                services.AddSingleton(_ =>
-                    GrpcChannel.ForAddress("http://localhost:5001"));
+                var endpoint = ctx.Configuration["GrpcEndpoint"]
+                    ?? throw new InvalidOperationException("GrpcEndpoint is not configured.");
+                var apiKey = ctx.Configuration["GrpcApiKey"]
+                    ?? throw new InvalidOperationException("GrpcApiKey is not configured.");
 
-                services.AddSingleton(s =>
-                    new Library.LibraryClient(s.GetRequiredService<GrpcChannel>()));
-                services.AddSingleton(s =>
-                    new Security.SecurityClient(s.GetRequiredService<GrpcChannel>()));
+                // h2c (plaintext) is acceptable for loopback localhost traffic.
+                var channel = GrpcChannel.ForAddress(endpoint);
+                var callInvoker = channel.Intercept(metadata =>
+                {
+                    metadata.Add("x-api-key", apiKey);
+                    return metadata;
+                });
+
+                services.AddSingleton(channel);
+                services.AddSingleton(_ => new Library.LibraryClient(callInvoker));
+                services.AddSingleton(_ => new Security.SecurityClient(callInvoker));
 
                 // Service abstractions — ViewModels depend only on these interfaces.
                 services.AddSingleton<IGraphDataService, GrpcGraphDataService>();

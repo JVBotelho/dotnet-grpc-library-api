@@ -63,8 +63,10 @@ public partial class WafLogViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            StatusText = $"Connection Lost: {ex.Message}";
+            // IsMonitoring = false triggers StopMonitoring() which sets "Stream Paused".
+            // Set the error message AFTER so it is not overwritten.
             IsMonitoring = false;
+            StatusText = $"Connection Lost: {ex.Message}";
         }
     }
 

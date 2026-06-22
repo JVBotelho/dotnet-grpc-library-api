@@ -23,6 +23,7 @@ public partial class NotificationService : ObservableObject, INotificationServic
     private void Show(ToastNotification toast, int durationMs)
     {
         _dismissCts?.Cancel();
+        _dismissCts?.Dispose();
         _dismissCts = new CancellationTokenSource();
         ActiveToast = toast;
         _ = DismissAfterAsync(durationMs, _dismissCts.Token);
