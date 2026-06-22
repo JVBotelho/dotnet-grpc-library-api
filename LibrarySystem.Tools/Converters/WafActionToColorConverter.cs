@@ -15,7 +15,7 @@ public class WafActionToColorConverter : IValueConverter
     {
         if (value is string action)
         {
-            if (action is "BLOCKED" or "Blocked/Alert") return Critical;
+            if (action is "Blocked" or "BLOCKED" or "Blocked/Alert") return Critical;
             if (action is "FLAGGED" or "WARN" or "WARNING") return Warning;
         }
         return Info;

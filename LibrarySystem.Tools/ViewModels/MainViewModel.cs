@@ -12,7 +12,6 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly IGraphDataService _graphService;
     private GraphNode? _currentlySelectedNode;
-    private readonly Random _random = new();
 
     [ObservableProperty] private ObservableCollection<GraphNode> _nodes = new();
     [ObservableProperty] private ObservableCollection<GraphEdge> _edges = new();
@@ -65,39 +64,83 @@ public partial class MainViewModel : ObservableObject
             Nodes.Clear();
             Edges.Clear();
 
-            var authorNodes = new Dictionary<string, GraphNode>();
-            var authorIndex = 0;
-
-            foreach (var book in books)
+            // Group books by author, preserving first-seen insertion order
+            var authorOrder   = new List<string>();
+            var booksByAuthor = new Dictionary<string, List<int>>();
+            for (int i = 0; i < books.Count; i++)
             {
-                if (!authorNodes.TryGetValue(book.Author, out var authorNode))
+                var author = books[i].Author;
+                if (!booksByAuthor.ContainsKey(author))
                 {
-                    // Negative IDs for synthetic author nodes — never collide with domain book IDs.
-                    authorNode = new GraphNode
+                    authorOrder.Add(author);
+                    booksByAuthor[author] = new List<int>();
+                }
+                booksByAuthor[author].Add(i);
+            }
+
+            // Hierarchical deterministic layout
+            const int AuthorX      = 80;
+            const int AuthorYStart  = 60;
+            const int AuthorYStep   = 130;
+            const int BookXBase     = 380;
+            const int BookXStep     = 240;
+            const int BookYStep     = 120;
+
+            var authorNodes = new Dictionary<string, GraphNode>();
+            int syntheticId = 0;
+            int authorIdx   = 0;
+            int nextBookY   = AuthorYStart;
+
+            foreach (var authorName in authorOrder)
+            {
+                int authorY = Math.Clamp(AuthorYStart + authorIdx * AuthorYStep, 20, 2800);
+
+                // Negative IDs for synthetic author nodes — never collide with domain book IDs.
+                var authorNode = new GraphNode
+                {
+                    Id       = -(++syntheticId),
+                    Title    = authorName,
+                    Subtitle = "Author",
+                    NodeType = "Author",
+                    X        = AuthorX,
+                    Y        = authorY,
+                };
+                Nodes.Add(authorNode);
+                authorNodes[authorName] = authorNode;
+
+                int bookColIdx = 0;
+                int bookX      = BookXBase;
+                int bookY      = Math.Max(authorY, nextBookY);
+
+                foreach (var idx in booksByAuthor[authorName])
+                {
+                    // Snake to the next column when the canvas bottom is exceeded
+                    if (bookY > 2800)
                     {
-                        Id       = -(++authorIndex),
-                        Title    = book.Author,
-                        Subtitle = "Author",
-                        NodeType = "Author",
-                        X        = _random.Next(50, 300),
-                        Y        = _random.Next(50, 500),
+                        bookColIdx++;
+                        bookX = BookXBase + bookColIdx * BookXStep;
+                        bookY = authorY;
+                    }
+
+                    var book = books[idx];
+                    var bookNode = new GraphNode
+                    {
+                        Id           = book.Id,
+                        Title        = book.Title,
+                        Subtitle     = $"{book.Author} · {book.PublicationYear}",
+                        NodeType     = "Book",
+                        X            = Math.Clamp(bookX, 20, 2800),
+                        Y            = Math.Clamp(bookY, 20, 2800),
+                        OriginalData = book
                     };
-                    Nodes.Add(authorNode);
-                    authorNodes[book.Author] = authorNode;
+                    Nodes.Add(bookNode);
+                    Edges.Add(new GraphEdge(authorNode, bookNode));
+
+                    bookY += BookYStep;
                 }
 
-                var bookNode = new GraphNode
-                {
-                    Id           = book.Id,
-                    Title        = book.Title,
-                    Subtitle     = $"{book.Author} · {book.PublicationYear}",
-                    NodeType     = "Book",
-                    X            = _random.Next(400, 1100),
-                    Y            = _random.Next(50, 600),
-                    OriginalData = book
-                };
-                Nodes.Add(bookNode);
-                Edges.Add(new GraphEdge(authorNode, bookNode));
+                nextBookY = bookY;
+                authorIdx++;
             }
 
             StatusMessage = $"Topology Loaded: {Nodes.Count} Nodes, {Edges.Count} Connections.";

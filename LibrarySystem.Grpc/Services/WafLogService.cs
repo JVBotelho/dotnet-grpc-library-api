@@ -71,30 +71,40 @@ public class WafLogService : Security.SecurityBase
             var request = transaction.TryGetProperty("request", out var req) ? req : default;
             var uri = request.ValueKind != JsonValueKind.Undefined && request.TryGetProperty("uri", out var u) ? u.GetString() : "/";
             
-            var action = "Audit";
+            var isInterrupted = transaction.TryGetProperty("is_interrupted", out var interrupted)
+                && interrupted.ValueKind == JsonValueKind.True;
+            var action = isInterrupted ? "Blocked" : "Allowed";
+
             var ruleId = "N/A";
-            
-            if (transaction.TryGetProperty("messages", out var messages) && messages.ValueKind == JsonValueKind.Array)
+            if (transaction.TryGetProperty("producer", out var producer)
+                && producer.TryGetProperty("rulesets", out var rulesets)
+                && rulesets.ValueKind == JsonValueKind.Array
+                && rulesets.GetArrayLength() > 0)
             {
-                foreach (var msg in messages.EnumerateArray())
-                {
-                    if (msg.TryGetProperty("ruleId", out var rid))
-                    {
-                        ruleId = rid.ToString();
-                        action = "Blocked/Alert";
-                        break; 
-                    }
-                }
+                ruleId = rulesets[0].GetString() ?? "N/A";
             }
+
+            var details = "";
+            if (request.ValueKind != JsonValueKind.Undefined
+                && request.TryGetProperty("body", out var body))
+            {
+                // Strip protobuf binary framing bytes, keep printable ASCII payload
+                var raw = body.GetString() ?? "";
+                details = System.Text.RegularExpressions.Regex.Replace(raw, @"[^\x20-\x7E]", " ")
+                               .Trim()
+                               .Replace("  ", " ");
+            }
+            if (string.IsNullOrWhiteSpace(details))
+                details = uri ?? "";
 
             return new WafLogEntry
             {
-                Timestamp = timestamp ?? "",
-                ClientIp = clientIp ?? "",
+                Timestamp  = timestamp ?? "",
+                ClientIp   = clientIp ?? "",
                 RequestUri = uri ?? "",
-                Action = action,
-                RuleId = ruleId,
-                Details = line.Length > 200 ? line.Substring(0, 200) + "..." : line
+                Action     = action,
+                RuleId     = ruleId,
+                Details    = details.Length > 200 ? details[..200] + "…" : details
             };
         }
         catch (Exception)

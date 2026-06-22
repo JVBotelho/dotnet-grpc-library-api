@@ -10,7 +10,8 @@
         mc:Ignorable="d"
         Title="LibrarySystem — Service Graph Inspector"
         Height="680" Width="1200" MinHeight="500" MinWidth="900"
-        Background="#1E1E1E" Foreground="#F1F1F1">
+        Background="#1E1E1E" Foreground="#F1F1F1"
+        Icon="{StaticResource AppLogoMark}">
 
     <d:Window.DataContext>
         <vm:MainViewModel/>
@@ -43,14 +44,18 @@
                 Background="#252526"
                 BorderBrush="#3F3F46" BorderThickness="0,0,0,1">
             <Grid Margin="12,0">
-                <!-- Left: eyebrow title + connection status -->
+                <!-- Left: brand icon + eyebrow title + topology status -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Graph topology icon -->
+                    <TextBlock Text="&#xE968;"
+                               FontFamily="Segoe MDL2 Assets, Segoe UI Symbol" FontSize="14"
+                               Foreground="#7C16FF"
+                               VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <TextBlock Text="SERVICE INSPECTOR"
                                FontFamily="Segoe UI" FontWeight="Bold" FontSize="11"
                                Foreground="#C49BFF"
                                VerticalAlignment="Center"/>
-
-                    <!-- Status indicator: dot + message -->
+                    <!-- Topology load status (muted, transient) -->
                     <StackPanel Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
                         <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,6,0"
                                  Fill="{Binding StatusMessage, Converter={StaticResource StatusTextToColor}}"/>
@@ -61,11 +66,40 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Right: Refresh Topology button -->
-                <Button HorizontalAlignment="Right" VerticalAlignment="Center"
-                        Command="{Binding LoadGraphDataCommand}"
-                        Content="Refresh Topology"
-                        Style="{StaticResource SecondaryButton}"/>
+                <!-- Right: WAF stream status + Refresh button + Expand -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <!-- WAF streaming status surfaced to the top bar -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,6,0"
+                                 Fill="{Binding WafLogs.StatusText, Converter={StaticResource StatusTextToColor}}"/>
+                        <TextBlock Text="{Binding WafLogs.StatusText}"
+                                   FontFamily="Consolas" FontSize="12"
+                                   Foreground="{Binding WafLogs.StatusText, Converter={StaticResource StatusTextToColor}}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Refresh Topology (icon + label) -->
+                    <Button VerticalAlignment="Center"
+                            Command="{Binding LoadGraphDataCommand}"
+                            Style="{StaticResource SecondaryButton}"
+                            Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontFamily="Segoe MDL2 Assets, Segoe UI Symbol" FontSize="12" Text="&#xE72C;"
+                                       VerticalAlignment="Center" Margin="0,0,5,0"/>
+                            <TextBlock Text="Refresh Topology" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Expand / Maximise toggle -->
+                    <Button x:Name="BtnExpand" VerticalAlignment="Center"
+                            Width="24"
+                            Style="{StaticResource SecondaryButton}"
+                            Click="OnExpandClick"
+                            ToolTip="Toggle fullscreen">
+                        <TextBlock FontFamily="Segoe MDL2 Assets, Segoe UI Symbol" FontSize="12" Text="&#xE740;"
+                                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -212,13 +246,47 @@
                                                        TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
 
-                                        <!-- Monospaced ID stamp, bottom-right -->
-                                        <TextBlock Grid.Row="2"
-                                                   Text="{Binding Id, StringFormat='ID: {0}'}"
-                                                   FontFamily="Consolas" FontSize="10"
-                                                   Foreground="#6E6E76"
-                                                   HorizontalAlignment="Right"
-                                                   Margin="0,0,8,6"/>
+                                        <!-- Bottom row: type icon + label (left) · book ID (right) -->
+                                        <Grid Grid.Row="2" Margin="8,0,8,6">
+                                            <!-- Type badge: icon glyph + NodeType text, colored like the rail -->
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock FontFamily="Segoe MDL2 Assets, Segoe UI Symbol" FontSize="11"
+                                                           Foreground="{Binding NodeType, Converter={StaticResource NodeTypeToRailColor}}"
+                                                           VerticalAlignment="Center" Margin="0,0,5,0">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="&#xE736;"/>  <!-- Book glyph -->
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding NodeType}" Value="Author">
+                                                                    <Setter Property="Text" Value="&#xE77B;"/>  <!-- Person glyph -->
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding NodeType}"
+                                                           FontFamily="Consolas" FontSize="10"
+                                                           Foreground="{Binding NodeType, Converter={StaticResource NodeTypeToRailColor}}"
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+
+                                            <!-- Domain ID — only meaningful for Book nodes -->
+                                            <TextBlock Text="{Binding Id, StringFormat='#{0}'}"
+                                                       FontFamily="Consolas" FontSize="10"
+                                                       Foreground="#6E6E76"
+                                                       HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding NodeType}" Value="Author">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
@@ -276,12 +344,17 @@
                                      FontFamily="Consolas"
                                      Style="{StaticResource InspectorTextBox}"/>
 
-                            <!-- Save button -->
+                            <!-- Save button (icon + label) -->
                             <Button Command="{Binding SaveChangesCommand}"
-                                    Content="Save Changes (gRPC)"
                                     Style="{StaticResource PrimaryButton}"
                                     HorizontalAlignment="Stretch"
-                                    Margin="0,18,0,0"/>
+                                    Margin="0,18,0,0">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets, Segoe UI Symbol" FontSize="13" Text="&#xE74E;"
+                                               VerticalAlignment="Center" Margin="0,0,7,0"/>
+                                    <TextBlock Text="Save Changes" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
 
                             <!-- Hint -->
                             <TextBlock Text="Changes are sent directly to the Core Service via gRPC and persisted in PostgreSQL."
@@ -332,8 +405,11 @@
                         BorderBrush="#3F3F46" BorderThickness="0,0,0,1"
                         Padding="12,7">
                     <Grid VerticalAlignment="Center">
-                        <!-- Left: label + stream status indicator -->
+                        <!-- Left: waveform icon + label + stream status indicator -->
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Image Source="{StaticResource AppLogoMark}"
+                                   Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <TextBlock Text="SECURITY CONSOLE (WAF)"
                                        FontFamily="Segoe UI" FontWeight="Bold" FontSize="11"
                                        Foreground="#CCCCCC"

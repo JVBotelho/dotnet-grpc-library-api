@@ -3,7 +3,6 @@
 
     <!-- ================================================================
          LibrarySystem Inspector — Design Tokens (WPF ResourceDictionary)
-         Mapped from the Claude Design handoff:
            tokens/colors.css · tokens/typography.css · tokens/spacing.css
          All hex values are ARGB (#AARRGGBB) where alpha < FF is needed.
          ================================================================ -->
@@ -48,6 +47,57 @@
     <SolidColorBrush x:Key="NodeAuthorRail" Color="#E3B341"/>
     <SolidColorBrush x:Key="EdgeLine"       Color="#444444"/>
     <SolidColorBrush x:Key="EdgeLineActive" Color="#9D4DFF"/>
+
+    <!-- ── App Logo Mark (mirrors logo-mark.svg) ── -->
+    <!-- Two purple nodes (solid) + two author nodes (gold-ring) connected by gray edges -->
+    <DrawingImage x:Key="AppLogoMark">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <!-- Background: dark rounded square -->
+                <GeometryDrawing Brush="#1E1E1E">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="0,0,32,32" RadiusX="5" RadiusY="5"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#3F3F46" Thickness="1"/>
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+                <!-- Graph edges: X cross -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#444444" Thickness="1.5"/>
+                    </GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <LineGeometry StartPoint="9,10" EndPoint="22,22"/>
+                            <LineGeometry StartPoint="22,10" EndPoint="9,22"/>
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <!-- Violet book nodes (top-left, bottom-right) -->
+                <GeometryDrawing Brush="#9333FF">
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <EllipseGeometry Center="9,10"  RadiusX="3.4" RadiusY="3.4"/>
+                            <EllipseGeometry Center="22,22" RadiusX="3.4" RadiusY="3.4"/>
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <!-- Gold-ring author nodes (top-right, bottom-left) -->
+                <GeometryDrawing Brush="#252526">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#E3B341" Thickness="1.6"/>
+                    </GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <EllipseGeometry Center="22,10" RadiusX="3.4" RadiusY="3.4"/>
+                            <EllipseGeometry Center="9,22"  RadiusX="3.4" RadiusY="3.4"/>
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
 
     <!-- ================================================================
          BUTTON STYLES
