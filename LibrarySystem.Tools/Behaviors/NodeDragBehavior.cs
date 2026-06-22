@@ -1,8 +1,10 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Xaml.Behaviors;
+using LibrarySystem.Tools.Messages;
 using LibrarySystem.Tools.ViewModels;
 
 namespace LibrarySystem.Tools.Behaviors;
@@ -11,34 +13,28 @@ public class NodeDragBehavior : Behavior<FrameworkElement>
 {
     private bool _isDragging;
     private Point _mouseStartPosition;
-    private FrameworkElement? _parentCanvas;
+    private Canvas? _parentCanvas;
 
     protected override void OnAttached()
     {
         base.OnAttached();
         AssociatedObject.PreviewMouseLeftButtonDown += OnMouseDown;
-        AssociatedObject.PreviewMouseLeftButtonUp += OnMouseUp;
-        AssociatedObject.PreviewMouseMove += OnMouseMove;
+        AssociatedObject.PreviewMouseLeftButtonUp   += OnMouseUp;
+        AssociatedObject.PreviewMouseMove           += OnMouseMove;
     }
 
     protected override void OnDetaching()
     {
         base.OnDetaching();
         AssociatedObject.PreviewMouseLeftButtonDown -= OnMouseDown;
-        AssociatedObject.PreviewMouseLeftButtonUp -= OnMouseUp;
-        AssociatedObject.PreviewMouseMove -= OnMouseMove;
+        AssociatedObject.PreviewMouseLeftButtonUp   -= OnMouseUp;
+        AssociatedObject.PreviewMouseMove           -= OnMouseMove;
     }
 
     private void OnMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (AssociatedObject.DataContext is GraphNode node)
-        {
-            var window = Application.Current.MainWindow;
-            if (window?.DataContext is MainViewModel mainVm)
-            {
-                mainVm.SelectNodeCommand.Execute(node);
-            }
-        }
+            WeakReferenceMessenger.Default.Send(new NodeSelectedMessage(node));
 
         _parentCanvas ??= FindParent<Canvas>(AssociatedObject);
         _isDragging = true;
@@ -56,30 +52,26 @@ public class NodeDragBehavior : Behavior<FrameworkElement>
     {
         if (!_isDragging || _parentCanvas == null) return;
 
-        var currentPosition = e.GetPosition(_parentCanvas);
-        var offsetX = currentPosition.X - _mouseStartPosition.X;
-        var offsetY = currentPosition.Y - _mouseStartPosition.Y;
+        var current = e.GetPosition(_parentCanvas);
+        var delta   = current - _mouseStartPosition;
 
-        // 2. Atualiza o ViewModel (Data Binding Reverso)
         if (AssociatedObject.DataContext is GraphNode node)
         {
-            node.X += offsetX;
-            node.Y += offsetY;
+            node.X += delta.X;
+            node.Y += delta.Y;
         }
 
-        // 3. Reseta a posição de referência para o próximo frame
-        _mouseStartPosition = currentPosition;
+        _mouseStartPosition = current;
     }
 
-    // Helper para achar o Canvas na árvore visual
     private static T? FindParent<T>(DependencyObject child) where T : DependencyObject
     {
         while (true)
         {
-            var parentObject = VisualTreeHelper.GetParent(child);
-            if (parentObject == null) return null;
-            if (parentObject is T parent) return parent;
-            child = parentObject;
+            var parent = VisualTreeHelper.GetParent(child);
+            if (parent == null) return null;
+            if (parent is T t) return t;
+            child = parent;
         }
     }
 }

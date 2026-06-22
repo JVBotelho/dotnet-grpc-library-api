@@ -1,9 +1,9 @@
-﻿using LibrarySystem.Contracts.Protos;
+using LibrarySystem.Contracts.Protos;
 
 namespace LibrarySystem.Tools.Services;
 
 public interface IGraphDataService
 {
-    // Task<GetAllBooksResponse> FetchInitialTopologyAsync();
-    
+    Task<IReadOnlyList<BookResponse>> GetTopologyAsync(CancellationToken ct = default);
+    Task<BookResponse> UpdateBookAsync(UpdateBookRequest request, CancellationToken ct = default);
 }

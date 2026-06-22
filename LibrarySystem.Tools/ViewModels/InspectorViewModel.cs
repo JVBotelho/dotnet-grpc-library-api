@@ -1,44 +1,47 @@
-﻿using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LibrarySystem.Contracts.Protos;
+using LibrarySystem.Tools.Services;
 
 namespace LibrarySystem.Tools.ViewModels;
 
 public partial class InspectorViewModel : ObservableObject
 {
-    private readonly Library.LibraryClient _client;
-    
-    // O Nó que estamos editando atualmente
-    [ObservableProperty] private GraphNode? _selectedNode;
+    private readonly IGraphDataService _graphService;
+    private readonly INotificationService _notifications;
 
-    // Propriedades editáveis (Binds do TextBox)
-    [ObservableProperty] private string _editTitle = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsBookNode))]
+    private GraphNode? _selectedNode;
+
+    [ObservableProperty] private string _editTitle  = string.Empty;
     [ObservableProperty] private string _editAuthor = string.Empty;
-    [ObservableProperty] private int _editYear;
+    [ObservableProperty] private string _editYear   = string.Empty;
 
-    public InspectorViewModel(Library.LibraryClient client)
+    // Used by XAML to disable the Author field for Author-type nodes.
+    public bool IsBookNode => SelectedNode?.NodeType == "Book";
+
+    public InspectorViewModel(IGraphDataService graphService, INotificationService notifications)
     {
-        _client = client;
+        _graphService  = graphService;
+        _notifications = notifications;
     }
 
-    // Chamado pelo MainViewModel quando o usuário clica num nó
     public void LoadNode(GraphNode node)
     {
         SelectedNode = node;
-        
-        // Copia dados para edição (se for um Livro)
+
         if (node.OriginalData != null)
         {
-            EditTitle = node.OriginalData.Title;
+            EditTitle  = node.OriginalData.Title;
             EditAuthor = node.OriginalData.Author;
-            EditYear = node.OriginalData.PublicationYear;
+            EditYear   = node.OriginalData.PublicationYear.ToString();
         }
         else
         {
-            // Fallback se for nó de Autor ou outro
-            EditTitle = node.Title;
-            EditAuthor = "System Entity";
+            EditTitle  = node.Title;
+            EditAuthor = string.Empty;
+            EditYear   = string.Empty;
         }
     }
 
@@ -49,33 +52,29 @@ public partial class InspectorViewModel : ObservableObject
 
         try
         {
-            // 1. Cria o Request gRPC
             var request = new UpdateBookRequest
             {
-                Id = SelectedNode.Id,
-                Title = EditTitle,
-                Author = EditAuthor,
-                PublicationYear = EditYear,
-                // Mantemos os outros campos originais para não zerar
-                Pages = SelectedNode.OriginalData.Pages,
-                TotalCopies = SelectedNode.OriginalData.TotalCopies
+                Id              = SelectedNode.Id,
+                Title           = EditTitle,
+                Author          = EditAuthor,
+                PublicationYear = int.TryParse(EditYear, out var y) ? y : 0,
+                Pages           = SelectedNode.OriginalData.Pages,
+                TotalCopies     = SelectedNode.OriginalData.TotalCopies
             };
 
-            // 2. Envia para o Backend (Docker)
-            var response = await _client.UpdateBookAsync(request);
+            var response = await _graphService.UpdateBookAsync(request);
 
-            // 3. Atualiza o Gráfico Visualmente (Feedback Instantâneo)
-            SelectedNode.Title = response.Title;
-            SelectedNode.Subtitle = response.Author; // Se mudou o autor
-            
-            // Atualiza o cache local
+            SelectedNode.Title        = response.Title;
+            SelectedNode.Subtitle     = $"{response.Author} · {response.PublicationYear}";
             SelectedNode.OriginalData = response;
 
-            MessageBox.Show("Saved successfully via gRPC!", "Success");
+            _notifications.ShowSuccess(
+                "Changes saved",
+                $"Book {SelectedNode.Id} persisted via gRPC → PostgreSQL.");
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Update failed: {ex.Message}", "Error");
+            _notifications.ShowError("Update failed", ex.Message);
         }
     }
 }

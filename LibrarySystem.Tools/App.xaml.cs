@@ -1,17 +1,14 @@
-﻿using System.Windows;
+using System.Windows;
 using LibrarySystem.Contracts.Protos;
-using LibrarySystem.Tools.ViewModels;
 using LibrarySystem.Tools.Services;
+using LibrarySystem.Tools.Services.Core;
+using LibrarySystem.Tools.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Grpc.Net.Client;
-using LibrarySystem.Tools.Services.Core;
 
 namespace LibrarySystem.Tools;
 
-/// <summary>
-/// Interaction logic for App.xaml
-/// </summary>
 public partial class App : Application
 {
     private readonly IHost _host;
@@ -19,26 +16,31 @@ public partial class App : Application
     public App()
     {
         _host = Host.CreateDefaultBuilder()
-            .ConfigureServices((context, services) =>
+            .ConfigureServices((_, services) =>
             {
-                services.AddSingleton(services => 
-                {
-                    var channel = GrpcChannel.ForAddress("http://localhost:5001"); 
-                    return channel;
-                });
-                
-                services.AddSingleton(s => new Library.LibraryClient(s.GetRequiredService<GrpcChannel>()));
-                services.AddSingleton(s => new Security.SecurityClient(s.GetRequiredService<GrpcChannel>()));
+                services.AddSingleton(_ =>
+                    GrpcChannel.ForAddress("http://localhost:5001"));
 
-                services.AddSingleton<ILogTailerService, FileLogTailerService>();
+                services.AddSingleton(s =>
+                    new Library.LibraryClient(s.GetRequiredService<GrpcChannel>()));
+                services.AddSingleton(s =>
+                    new Security.SecurityClient(s.GetRequiredService<GrpcChannel>()));
+
+                // Service abstractions — ViewModels depend only on these interfaces.
                 services.AddSingleton<IGraphDataService, GrpcGraphDataService>();
+                services.AddSingleton<ILogTailerService, GrpcLogTailerService>();
 
-                services.AddTransient<MainViewModel>();
+                // Notification service: singleton registered as both concrete
+                // type (for XAML binding) and interface (for ViewModel injection).
+                services.AddSingleton<NotificationService>();
+                services.AddSingleton<INotificationService>(
+                    s => s.GetRequiredService<NotificationService>());
+
                 services.AddTransient<InspectorViewModel>();
-                services.AddTransient<GraphViewModel>();
                 services.AddTransient<WafLogViewModel>();
+                services.AddTransient<MainViewModel>();
 
-                services.AddSingleton<MainWindow>(s => new MainWindow()
+                services.AddSingleton<MainWindow>(s => new MainWindow
                 {
                     DataContext = s.GetRequiredService<MainViewModel>()
                 });
@@ -49,10 +51,7 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         await _host.StartAsync();
-
-        var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-        mainWindow.Show();
-
+        _host.Services.GetRequiredService<MainWindow>().Show();
         base.OnStartup(e);
     }
 
@@ -62,4 +61,3 @@ public partial class App : Application
         base.OnExit(e);
     }
 }
-
