@@ -12,11 +12,7 @@ public class Book
 
     public Book(string title, string author, int publicationYear, int pages, int totalCopies)
     {
-        // Guard Clauses (Shift Left: Fail Fast)
-        if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title cannot be empty.", nameof(title));
-        if (string.IsNullOrWhiteSpace(author)) throw new ArgumentException("Author cannot be empty.", nameof(author));
-        if (totalCopies < 0) throw new ArgumentException("Total copies cannot be negative.", nameof(totalCopies));
-
+        ValidateFields(title, author, publicationYear, pages, totalCopies);
         Title = title;
         Author = author;
         PublicationYear = publicationYear;
@@ -25,11 +21,11 @@ public class Book
     }
 
     public int Id { get; private set; }
-    public string Title { get; } = string.Empty;
+    public string Title { get; private set; } = string.Empty;
     public string Author { get; private set; } = string.Empty;
     public int PublicationYear { get; private set; }
     public int Pages { get; private set; }
-    public int TotalCopies { get; }
+    public int TotalCopies { get; private set; }
 
     // Public read-only access
     public IReadOnlyCollection<LendingActivity> LendingActivities => _lendingActivities.AsReadOnly();
@@ -59,5 +55,26 @@ public class Book
         if (lending == null) throw new ArgumentException("Lending record not found.", nameof(lendingId));
 
         lending.MarkAsReturned();
+    }
+    
+    public void UpdateDetails(string title, string author, int year, int pages, int totalCopies)
+    {
+        ValidateFields(title, author, year, pages, totalCopies);
+        Title = title;
+        Author = author;
+        PublicationYear = year;
+        Pages = pages;
+        TotalCopies = totalCopies;
+    }
+
+    private static void ValidateFields(string title, string author, int year, int pages, int totalCopies)
+    {
+        if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title cannot be empty.", nameof(title));
+        if (title.Length > 500) throw new ArgumentException("Title must be 500 characters or fewer.", nameof(title));
+        if (string.IsNullOrWhiteSpace(author)) throw new ArgumentException("Author cannot be empty.", nameof(author));
+        if (author.Length > 300) throw new ArgumentException("Author must be 300 characters or fewer.", nameof(author));
+        if (year < 1) throw new ArgumentException("Publication year must be a positive number.", nameof(year));
+        if (pages < 1) throw new ArgumentException("Pages must be a positive number.", nameof(pages));
+        if (totalCopies < 0) throw new ArgumentException("Total copies cannot be negative.", nameof(totalCopies));
     }
 }

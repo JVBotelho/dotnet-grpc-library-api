@@ -46,6 +46,9 @@ namespace LibrarySystem.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<int>("TotalCopies")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.ToTable("Books");

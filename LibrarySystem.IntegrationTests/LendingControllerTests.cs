@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using AutoFixture;
@@ -27,7 +27,6 @@ public class LendingControllerTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task CreateLending_WithValidData_ReturnsCreatedResponse()
     {
-        // Arrange
         var createDto = _fixture.Create<CreateLendingDto>();
         var expectedResponse = new LendingActivityResponse
         {
@@ -39,11 +38,7 @@ public class LendingControllerTests : IClassFixture<CustomWebApplicationFactory>
 
         SetupGrpcCall(c => c.CreateLendingAsync(It.IsAny<CreateLendingRequest>(), It.IsAny<CallOptions>()),
             expectedResponse);
-
-        // Act
         var response = await _client.PostAsJsonAsync("/api/lending", createDto);
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var lending = await response.Content.ReadFromJsonAsync<LendingActivityResponse>();
@@ -57,7 +52,6 @@ public class LendingControllerTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task ReturnBook_WhenLendingExists_ReturnsOk()
     {
-        // Arrange
         var lendingId = 123;
         var expectedResponse = new LendingActivityResponse
         {
@@ -69,8 +63,6 @@ public class LendingControllerTests : IClassFixture<CustomWebApplicationFactory>
         };
 
         SetupGrpcCall(c => c.ReturnBookAsync(It.IsAny<ReturnBookRequest>(), It.IsAny<CallOptions>()), expectedResponse);
-
-        // Act
         var returnResponse = await _client.PutAsync($"/api/lending/{lendingId}/return", null);
 
         // Diagnostics
@@ -79,8 +71,6 @@ public class LendingControllerTests : IClassFixture<CustomWebApplicationFactory>
             var content = await returnResponse.Content.ReadAsStringAsync();
             throw new Exception($"API Failed with {returnResponse.StatusCode}: {content}");
         }
-
-        // Assert
         returnResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var returnedLending = await returnResponse.Content.ReadFromJsonAsync<LendingActivityResponse>();
@@ -92,16 +82,11 @@ public class LendingControllerTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task ReturnBook_WhenAlreadyReturned_ReturnsBadRequest()
     {
-        // Arrange
         var rpcException = new RpcException(new Status(StatusCode.FailedPrecondition, "Book already returned"));
 
         _grpcMock.Setup(x => x.ReturnBookAsync(It.IsAny<ReturnBookRequest>(), It.IsAny<CallOptions>()))
             .Throws(rpcException);
-
-        // Act
         var response = await _client.PutAsync("/api/lending/1/return", null);
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 

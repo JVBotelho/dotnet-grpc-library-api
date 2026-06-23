@@ -1,4 +1,4 @@
-﻿using Google.Protobuf.WellKnownTypes;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using LibrarySystem.Api.Dtos;
 using LibrarySystem.Contracts.Protos;
@@ -32,7 +32,7 @@ public class BooksController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Erro ao comunicar com o serviço gRPC: {ex.Message}");
+            return StatusCode(500, $"Error communicating with gRPC service: {ex.Message}");
         }
     }
 

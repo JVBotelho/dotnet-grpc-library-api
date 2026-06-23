@@ -1,4 +1,5 @@
 ﻿using LibrarySystem.Application;
+using LibrarySystem.Grpc.Interceptors;
 using LibrarySystem.Grpc.Services;
 using LibrarySystem.Persistence;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -10,7 +11,12 @@ builder.WebHost.ConfigureKestrel(options =>
     options.ConfigureEndpointDefaults(lo => lo.Protocols = HttpProtocols.Http2);
 });
 
-builder.Services.AddGrpc(options => { options.EnableDetailedErrors = true; });
+builder.Services.AddSingleton<ApiKeyInterceptor>();
+builder.Services.AddGrpc(options =>
+{
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+    options.Interceptors.Add<ApiKeyInterceptor>();
+});
 
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
@@ -32,6 +38,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.MapGrpcService<LibraryService>();
+app.MapGrpcService<WafLogService>();
 app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client.");
 
 app.Run();
