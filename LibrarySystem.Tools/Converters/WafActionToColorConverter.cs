@@ -15,10 +15,12 @@ public class WafActionToColorConverter : IValueConverter
     {
         if (value is string action)
         {
-            if (action is "Blocked" or "BLOCKED" or "Blocked/Alert") return Critical;
-            if (action is "FLAGGED" or "WARN" or "WARNING") return Warning;
+            var a = action.ToUpperInvariant();
+            if (a is "BLOCKED" or "BLOCKED/ALERT") return Critical;
+            if (a is "FLAGGED" or "WARN" or "WARNING") return Warning;
+            if (a is "ALLOWED" or "AUDIT") return Info;
         }
-        return Info;
+        return Warning;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>

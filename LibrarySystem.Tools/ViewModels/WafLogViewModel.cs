@@ -33,9 +33,11 @@ public partial class WafLogViewModel : ObservableObject, IDisposable
             BindingOperations.EnableCollectionSynchronization(Logs, _lock);
     }
 
+    internal Task? CurrentStreamTask { get; private set; }
+
     partial void OnIsMonitoringChanged(bool value)
     {
-        if (value) _ = StartMonitoringAsync();
+        if (value) CurrentStreamTask = StartMonitoringAsync();
         else StopMonitoring();
     }
 

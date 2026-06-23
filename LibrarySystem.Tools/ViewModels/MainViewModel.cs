@@ -51,6 +51,9 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void DismissToast() => Notifications.Dismiss();
+
+    [RelayCommand]
     public async Task LoadGraphData()
     {
         try

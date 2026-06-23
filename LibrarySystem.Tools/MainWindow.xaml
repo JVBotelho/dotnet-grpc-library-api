@@ -13,10 +13,6 @@
         Background="#1E1E1E" Foreground="#F1F1F1"
         Icon="{StaticResource AppLogoMark}">
 
-    <d:Window.DataContext>
-        <vm:MainViewModel/>
-    </d:Window.DataContext>
-
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -509,6 +505,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Tone dot -->
@@ -546,6 +543,19 @@
                                    Margin="0,3,0,0"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
+
+                    <!-- Dismiss button -->
+                    <Button Grid.Column="2"
+                            Command="{Binding DismissToastCommand}"
+                            Background="Transparent" BorderThickness="0"
+                            VerticalAlignment="Top" Margin="10,0,0,0"
+                            Padding="2" Cursor="Hand"
+                            FocusVisualStyle="{x:Null}"
+                            ToolTip="Dismiss">
+                        <TextBlock Text="&#xE711;"
+                                   FontFamily="Segoe MDL2 Assets, Segoe UI Symbol"
+                                   FontSize="10" Foreground="#6E6E76"/>
+                    </Button>
                 </Grid>
             </Border>
         </Grid>

@@ -44,9 +44,7 @@ public class WafLogViewModelTests
 
         var sut = new WafLogViewModel(logMock.Object);
         sut.IsMonitoring = true;
-
-        // Give the async task time to consume the in-memory stream.
-        await Task.Delay(50);
+        await sut.CurrentStreamTask!;
 
         sut.Logs.Should().HaveCount(2);
     }
@@ -82,8 +80,7 @@ public class WafLogViewModelTests
 
         var sut = new WafLogViewModel(logMock.Object);
         sut.IsMonitoring = true;
-
-        await Task.Delay(50);
+        await sut.CurrentStreamTask!;
 
         sut.StatusText.Should().StartWith("Connection Lost:");
         sut.IsMonitoring.Should().BeFalse();
@@ -101,8 +98,7 @@ public class WafLogViewModelTests
 
         var sut = new WafLogViewModel(logMock.Object);
         sut.IsMonitoring = true;
-
-        await Task.Delay(100);
+        await sut.CurrentStreamTask!;
 
         sut.Logs.Should().HaveCount(100);
     }

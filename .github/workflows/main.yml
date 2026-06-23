@@ -30,14 +30,14 @@ jobs:
         run: dotnet restore LibrarySystem.sln
 
       - name: Build
-        run: dotnet build LibrarySystem.sln --no-restore --configuration Release
+        # LibrarySystem.Linux.slnf excludes net10.0-windows WPF projects (Tools + Tools.UnitTests)
+        # that require the Windows Desktop SDK and cannot be compiled on ubuntu-latest.
+        run: dotnet build LibrarySystem.Linux.slnf --no-restore --configuration Release
 
       - name: Test with Coverage
-        # Exclude WPF project — net10.0-windows targets are covered by the windows job below.
         run: >
-          dotnet test LibrarySystem.sln
+          dotnet test LibrarySystem.Linux.slnf
           --no-build --configuration Release
-          --filter "FullyQualifiedName!~LibrarySystem.Tools.UnitTests"
           --collect:"XPlat Code Coverage"
           --results-directory ./coverage
 
