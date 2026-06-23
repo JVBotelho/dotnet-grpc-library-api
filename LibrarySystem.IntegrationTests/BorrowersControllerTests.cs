@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using AutoFixture;
@@ -25,7 +25,6 @@ public class BorrowersControllerTests : IClassFixture<CustomWebApplicationFactor
     [Fact]
     public async Task GetTopBorrowers_ReturnsCorrectlyOrderedBorrowers()
     {
-        // Arrange
         var grpcResponse = new GetTopBorrowersResponse();
 
         grpcResponse.TopBorrowers.Add(new TopBorrowerInfo
@@ -45,8 +44,6 @@ public class BorrowersControllerTests : IClassFixture<CustomWebApplicationFactor
 
         var startDate = DateTime.UtcNow.AddDays(-1).ToString("o");
         var endDate = DateTime.UtcNow.AddDays(1).ToString("o");
-
-        // Act
         var response =
             await _client.GetAsync($"/api/borrowers/most-active?startDate={startDate}&endDate={endDate}&count=2");
 
@@ -55,8 +52,6 @@ public class BorrowersControllerTests : IClassFixture<CustomWebApplicationFactor
             var error = await response.Content.ReadAsStringAsync();
             throw new Exception($"API Failed: {response.StatusCode} - {error}");
         }
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var topBorrowers = await response.Content.ReadFromJsonAsync<List<TopBorrowerInfo>>();
 

@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
 using AutoFixture;
@@ -21,15 +21,12 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
     {
         _client = factory.CreateClient();
         _grpcMock = factory.LibraryClientMock;
-
-        // Clean slate for every test
         _grpcMock.Reset();
     }
 
     [Fact]
     public async Task CreateBook_WithValidData_ReturnsCreatedResponse()
     {
-        // Arrange
         var createDto = _fixture.Create<CreateBookDto>();
         var expectedResponse = new BookResponse
         {
@@ -40,23 +37,13 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
             Pages = createDto.Pages,
             TotalCopies = createDto.TotalCopies
         };
-
-        // Mock: Accept any CreateBookRequest, return the expected BookResponse
         SetupGrpcCall(c => c.CreateBookAsync(It.IsAny<CreateBookRequest>(), It.IsAny<CallOptions>()), expectedResponse);
-
-        // Act
         var response = await _client.PostAsJsonAsync("/api/books", createDto);
 
         await EnsureSuccessOrThrow(response);
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-
-        // Verify Location Header
         response.Headers.Location.Should().NotBeNull();
         response.Headers.Location!.OriginalString.Should().Contain("/api/Books/10");
-
-        // Verify Body
         var createdBook = await response.Content.ReadFromJsonAsync<BookResponse>();
         createdBook.Should().NotBeNull();
         createdBook!.Title.Should().Be(createDto.Title);
@@ -66,7 +53,6 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task UpdateBook_WithValidData_ReturnsOkResponse()
     {
-        // Arrange
         var updateDto = _fixture.Create<UpdateBookDto>();
         var expectedResponse = new BookResponse
         {
@@ -76,12 +62,8 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
         };
 
         SetupGrpcCall(c => c.UpdateBookAsync(It.IsAny<UpdateBookRequest>(), It.IsAny<CallOptions>()), expectedResponse);
-
-        // Act
         var response = await _client.PutAsJsonAsync("/api/books/1", updateDto);
         await EnsureSuccessOrThrow(response);
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var updatedBook = await response.Content.ReadFromJsonAsync<BookResponse>();
         updatedBook!.Title.Should().Be(updateDto.Title);
@@ -90,29 +72,19 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task DeleteBook_WithExistingId_ReturnsNoContent()
     {
-        // Arrange
         SetupGrpcCall(c => c.DeleteBookAsync(It.IsAny<DeleteBookRequest>(), It.IsAny<CallOptions>()), new Empty());
-
-        // Act
         var response = await _client.DeleteAsync("/api/books/1");
-
-        // Assert 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
     [Fact]
     public async Task GetBook_WhenNotFound_Returns404()
     {
-        // Arrange: Simulate gRPC throwing RpcException(NotFound)
         var rpcException = new RpcException(new Status(StatusCode.NotFound, "Book not found"));
 
         _grpcMock.Setup(x => x.GetBookByIdAsync(It.IsAny<GetBookByIdRequest>(), It.IsAny<CallOptions>()))
             .Throws(rpcException);
-
-        // Act
         var response = await _client.GetAsync("/api/books/999");
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         var content = await response.Content.ReadAsStringAsync();
         content.Should().Contain("Book not found");
@@ -121,7 +93,6 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task GetMostBorrowedBooks_ReturnsCorrectlyMappedList()
     {
-        // Arrange
         var grpcResponse = new GetMostBorrowedBooksResponse();
         grpcResponse.MostBorrowedBooks.Add(new MostBorrowedBookInfo
         {
@@ -137,12 +108,8 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
         SetupGrpcCall(
             c => c.GetMostBorrowedBooksAsync(It.IsAny<GetMostBorrowedBooksRequest>(), It.IsAny<CallOptions>()),
             grpcResponse);
-
-        // Act
         var response = await _client.GetAsync("/api/books/most-borrowed?count=2");
         await EnsureSuccessOrThrow(response);
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var list = await response.Content.ReadFromJsonAsync<List<MostBorrowedBookInfo>>();
 
@@ -154,7 +121,6 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task GetBookAvailability_ReturnsCorrectCounts()
     {
-        // Arrange
         var expectedResponse = new BookAvailabilityResponse
         {
             TotalCopies = 10,
@@ -164,12 +130,8 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
 
         SetupGrpcCall(c => c.GetBookAvailabilityAsync(It.IsAny<GetBookAvailabilityRequest>(), It.IsAny<CallOptions>()),
             expectedResponse);
-
-        // Act
         var response = await _client.GetAsync("/api/books/1/availability");
         await EnsureSuccessOrThrow(response);
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var availability = await response.Content.ReadFromJsonAsync<BookAvailabilityResponse>();
 
@@ -179,7 +141,6 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task GetLendingHistory_ReturnsCorrectList()
     {
-        // Arrange
         var grpcResponse = new GetUserLendingHistoryResponse();
         grpcResponse.History.Add(new UserLendingHistoryItem
         {
@@ -193,12 +154,8 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
 
         var start = DateTime.UtcNow.AddDays(-1).ToString("o");
         var end = DateTime.UtcNow.AddDays(1).ToString("o");
-
-        // Act
         var response = await _client.GetAsync($"/api/borrowers/1/history?startDate={start}&endDate={end}");
         await EnsureSuccessOrThrow(response);
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var history = await response.Content.ReadFromJsonAsync<List<UserLendingHistoryItem>>();
 
@@ -209,7 +166,6 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task GetAlsoBorrowed_ReturnsRankedList()
     {
-        // Arrange
         var grpcResponse = new GetAlsoBorrowedBooksResponse();
         grpcResponse.AlsoBorrowedBooks.Add(new AlsoBorrowedBookInfo
         {
@@ -220,12 +176,8 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
         SetupGrpcCall(
             c => c.GetAlsoBorrowedBooksAsync(It.IsAny<GetAlsoBorrowedBooksRequest>(), It.IsAny<CallOptions>()),
             grpcResponse);
-
-        // Act
         var response = await _client.GetAsync("/api/books/1/also-borrowed");
         await EnsureSuccessOrThrow(response);
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var list = await response.Content.ReadFromJsonAsync<List<AlsoBorrowedBookInfo>>();
 
@@ -235,17 +187,12 @@ public class BooksControllerTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task GetReadingRate_ReturnsDoubleValue()
     {
-        // Arrange
         var expectedResponse = new EstimateReadingRateResponse { PagesPerDay = 42.5 };
 
         SetupGrpcCall(c => c.EstimateReadingRateAsync(It.IsAny<EstimateReadingRateRequest>(), It.IsAny<CallOptions>()),
             expectedResponse);
-
-        // Act
         var response = await _client.GetAsync("/api/books/1/reading-rate");
         await EnsureSuccessOrThrow(response);
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var rate = await response.Content.ReadFromJsonAsync<EstimateReadingRateResponse>();
 

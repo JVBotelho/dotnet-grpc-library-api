@@ -38,13 +38,21 @@ jobs:
         run: >
           dotnet test LibrarySystem.Linux.slnf
           --no-build --configuration Release
+          --settings coverage.runsettings
           --collect:"XPlat Code Coverage"
           --results-directory ./coverage
+
+      - name: Merge Coverage Reports
+        uses: danielpalme/ReportGenerator-GitHub-Action@v5
+        with:
+          reports: 'coverage/**/coverage.cobertura.xml'
+          targetdir: 'coverage/merged'
+          reporttypes: 'Cobertura'
 
       - name: Code Coverage Summary Report
         uses: irongut/CodeCoverageSummary@51cc3a756ddcd398d447c044c02cb6aa83fdae95 # v1.3.0
         with:
-          filename: coverage/**/coverage.cobertura.xml
+          filename: coverage/merged/Cobertura.xml
           badge: true
           fail_below_min: true
           format: markdown

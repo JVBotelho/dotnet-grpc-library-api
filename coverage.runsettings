@@ -14,6 +14,13 @@
           <Exclude>
             <!-- Protobuf-generated types and gRPC stubs -->
             [LibrarySystem.Contracts]*,
+            <!-- Auto-generated OpenApi models -->
+            [Microsoft.AspNetCore.OpenApi]*,
+            <!-- Migrations, Program and Bootstrapping -->
+            [LibrarySystem.Persistence]LibrarySystem.Persistence.Migrations.*,
+            [LibrarySystem.Persistence]LibrarySystem.Persistence.SeedData,
+            [LibrarySystem.Persistence]LibrarySystem.Persistence.DependencyInjection,
+            [LibrarySystem.Api]Program,
             <!-- WPF App bootstrap, MainWindow code-behind, Behaviors, Converters -->
             [LibrarySystem.Tools]LibrarySystem.Tools.App,
             [LibrarySystem.Tools]LibrarySystem.Tools.MainWindow*,

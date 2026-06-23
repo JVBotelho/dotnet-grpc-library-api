@@ -1,4 +1,4 @@
-﻿using AutoFixture;
+using AutoFixture;
 using FluentAssertions;
 using LibrarySystem.Application.Abstractions.Repositories;
 using LibrarySystem.Application.UseCases.Books.CreateBook;
@@ -26,13 +26,8 @@ public class CreateBookCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldCreateBook_AndCallRepository()
     {
-        // Arrange
         var command = _fixture.Create<CreateBookCommand>();
-
-        // Act
         var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
         result.Should().NotBeNull();
         result.Title.Should().Be(command.Title);
         result.TotalCopies.Should().Be(command.TotalCopies);
