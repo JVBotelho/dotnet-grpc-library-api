@@ -378,6 +378,64 @@
                             </TextBlock.Style>
                         </TextBlock>
 
+                        <!-- TELEMETRY eyebrow header -->
+                        <TextBlock Text="KIOSK TELEMETRY"
+                                   FontFamily="Segoe UI" FontWeight="Bold" FontSize="11"
+                                   Foreground="#C49BFF"
+                                   Margin="0,32,0,16"/>
+
+                        <!-- Telemetry Grid -->
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Motor Temp" Foreground="#AAAAAA" Margin="0,4"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding BeltMotorTempC, StringFormat={}{0:F1} °C}" Foreground="#F1F1F1" Margin="0,4" FontWeight="Bold"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Scanner RPM" Foreground="#AAAAAA" Margin="0,4"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ScannerRpm, StringFormat={}{0:F0} RPM}" Foreground="#F1F1F1" Margin="0,4" FontWeight="Bold"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Safety Door" Foreground="#AAAAAA" Margin="0,4"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SafetyDoorClosed}" Foreground="#F1F1F1" Margin="0,4" FontWeight="Bold">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SafetyDoorClosed}" Value="True">
+                                                <Setter Property="Foreground" Value="#3FB950"/>
+                                                <Setter Property="Text" Value="CLOSED"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding SafetyDoorClosed}" Value="False">
+                                                <Setter Property="Foreground" Value="#F85149"/>
+                                                <Setter Property="Text" Value="OPEN"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Fault Flags" Foreground="#AAAAAA" Margin="0,4"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding FaultFlags, StringFormat=0x{0:X8}}" Foreground="#F1F1F1" Margin="0,4" FontFamily="Consolas">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding FaultFlags}" Value="0">
+                                                <Setter Property="Foreground" Value="#3FB950"/>
+                                                <Setter Property="Text" Value="OK"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+
                     </StackPanel>
                 </ScrollViewer>
             </Border>

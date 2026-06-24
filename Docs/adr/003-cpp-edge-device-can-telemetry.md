@@ -143,6 +143,15 @@ The one place we deliberately spend beyond the minimum is **real `SocketCAN` ove
 - **Scope discipline required** — the bidi + CAN + resilience trio is the value; the optional compute server (Phase 7) must not be started before they are done.
 - **Idempotency correctness** — offline replay needs dedupe keys to avoid double-returns; called out as a first-class test target.
 
+## Lessons Learned & Known Limitations
+
+> [!WARNING]
+> While this implementation demonstrates advanced C++ capabilities and embedded domain knowledge, it intentionally bounds its scope to remain deliverable. The following limitations represent conscious architectural trade-offs rather than oversights:
+
+- **No Multiplexing**: The current signal codec handles flat CAN frames where the message layout is fixed per CAN ID. It does not support multiplexed signals (where the layout of the message changes depending on a multiplexor bitfield), which is a common requirement in complex heavy-duty protocols like J1939.
+- **No Distributed Replay**: For extensive load testing, true automotive environments replay distributed `candump` logs across multiple isolated nodes, requiring strict timestamp synchronization. Our simulation is standalone per Kiosk and does not support distributed, coordinated replay.
+- **Static Signal Maps vs Dynamic DBC Parsing**: While the `ExtractSignal` bit-shifting engine is mathematically generic and handles cross-byte Motorola/Intel endianness exactly like an ECU, the signal definition array (`KIOSK_SIGNALS`) is compiled statically. A production-grade telemetry edge device would typically embed a full `.dbc` parser to load layout definitions dynamically at runtime, but doing so natively in C++ was omitted to avoid parser bloat. Instead, we formalize the schema via Python `cantools` on the generator side, and map it symmetrically in C++.
+
 ## Action Items
 1. [ ] Add `kiosk.proto` (`ValidateMember`, `BulkReturn`, `SyncOfflineQueue`, `DeviceLink` + telemetry/control messages); wire `Grpc.Tools` codegen.
 2. [ ] Implement the `Kiosk` service handlers in `LibrarySystem.Grpc` through MediatR/CQRS; add idempotent ingestion.

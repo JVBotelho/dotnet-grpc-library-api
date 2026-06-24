@@ -1,6 +1,16 @@
 {
     order coraza_waf first
     order rate_limit before basicauth
+    
+    layer4 {
+        :8443 {
+            route {
+                proxy {
+                    upstream library-grpc:8443
+                }
+            }
+        }
+    }
 }
 
 :80 {

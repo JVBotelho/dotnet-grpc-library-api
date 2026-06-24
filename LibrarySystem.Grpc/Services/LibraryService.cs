@@ -1,5 +1,6 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using LibrarySystem.Application.Abstractions.Services;
 using LibrarySystem.Application.DTOs;
 using LibrarySystem.Application.UseCases.Books.CreateBook;
 using LibrarySystem.Application.UseCases.Books.Delete;
@@ -25,10 +26,12 @@ namespace LibrarySystem.Grpc.Services;
 public class LibraryService : Library.LibraryBase
 {
     private readonly ISender _sender;
+    private readonly IImageHashingService _hashingService;
 
-    public LibraryService(ISender sender)
+    public LibraryService(ISender sender, IImageHashingService hashingService)
     {
         _sender = sender;
+        _hashingService = hashingService;
     }
     public override async Task<BookResponse> GetBookById(GetBookByIdRequest request, ServerCallContext context)
     {
@@ -216,6 +219,12 @@ public class LibraryService : Library.LibraryBase
             throw new RpcException(new Status(StatusCode.NotFound, "Book not found"));
         }
     }
+    public override async Task<ComputeImageHashResponse> ComputeImageHash(ComputeImageHashRequest request, ServerCallContext context)
+    {
+        var hash = await _hashingService.ComputeHashAsync(request.ImageData.ToByteArray(), context.CancellationToken);
+        return new ComputeImageHashResponse { PHash = hash };
+    }
+
     private static BookResponse MapToResponse(BookDto dto)
     {
         return new BookResponse

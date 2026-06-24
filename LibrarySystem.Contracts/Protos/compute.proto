@@ -1,0 +1,16 @@
+syntax = "proto3";
+option csharp_namespace = "LibrarySystem.Contracts.Protos";
+
+service Compute {
+  // Offloads heavy perceptual hashing (pHash) computation to a native C++ worker node.
+  rpc ComputeImageHash (ComputeNodeImageHashRequest) returns (ComputeNodeImageHashResponse);
+}
+
+message ComputeNodeImageHashRequest {
+  string image_id = 1;
+  bytes image_data = 2; // raw pixels or JPEG payload
+}
+
+message ComputeNodeImageHashResponse {
+  string p_hash = 1; // 64-bit hex encoded perceptual hash
+}

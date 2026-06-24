@@ -1,4 +1,4 @@
-﻿using LibrarySystem.Application.Abstractions.Repositories;
+using LibrarySystem.Application.Abstractions.Repositories;
 using LibrarySystem.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<IBookRepository, BookRepository>();
         services.AddScoped<IBorrowerRepository, BorrowerRepository>();
         services.AddScoped<ILendingRepository, LendingRepository>();
+        services.AddScoped<IProcessedEventRepository, ProcessedEventRepository>();
 
         return services;
     }

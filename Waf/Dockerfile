@@ -1,8 +1,9 @@
-﻿FROM caddy:builder AS builder
+FROM caddy:builder AS builder
 
 RUN xcaddy build \
     --with github.com/corazawaf/coraza-caddy/v2 \
     --with github.com/mholt/caddy-ratelimit \
+    --with github.com/mholt/caddy-l4 \
     --output /usr/bin/caddy
 
 FROM alpine:latest AS crs_downloader

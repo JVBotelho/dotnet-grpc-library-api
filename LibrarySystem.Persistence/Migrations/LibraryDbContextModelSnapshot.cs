@@ -80,6 +80,22 @@ namespace LibrarySystem.Persistence.Migrations
                     b.ToTable("Borrowers");
                 });
 
+            modelBuilder.Entity("LibrarySystem.Domain.Entities.CardMapping", b =>
+                {
+                    b.Property<string>("CardUid")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("BorrowerId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("CardUid");
+
+                    b.HasIndex("BorrowerId");
+
+                    b.ToTable("CardMappings");
+                });
+
             modelBuilder.Entity("LibrarySystem.Domain.Entities.LendingActivity", b =>
                 {
                     b.Property<int>("Id")
@@ -107,6 +123,31 @@ namespace LibrarySystem.Persistence.Migrations
                     b.HasIndex("BorrowerId");
 
                     b.ToTable("LendingActivities");
+                });
+
+            modelBuilder.Entity("LibrarySystem.Domain.Entities.ProcessedEvent", b =>
+                {
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("IdempotencyKey");
+
+                    b.ToTable("ProcessedEvents");
+                });
+
+            modelBuilder.Entity("LibrarySystem.Domain.Entities.CardMapping", b =>
+                {
+                    b.HasOne("LibrarySystem.Domain.Entities.Borrower", "Borrower")
+                        .WithMany()
+                        .HasForeignKey("BorrowerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Borrower");
                 });
 
             modelBuilder.Entity("LibrarySystem.Domain.Entities.LendingActivity", b =>

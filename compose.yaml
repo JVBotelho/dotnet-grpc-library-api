@@ -1,4 +1,4 @@
-﻿services:
+services:
   library-api:
     container_name: library-api
     build:
@@ -20,6 +20,15 @@
         limits:
           memory: 512M
 
+  library-compute:
+    container_name: library-compute
+    build:
+      context: .
+      dockerfile: services/cpp-compute/Dockerfile
+    networks:
+      - library-net
+    restart: unless-stopped
+
   library-grpc:
     container_name: library-grpc
     build:
@@ -28,14 +37,19 @@
     ports:
       - "5001:8080"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080;https://+:8443
+      - Kestrel__Endpoints__Https__Url=https://+:8443
+      - Kestrel__Endpoints__Https__Certificate__Path=/etc/certs/server.pfx
+      - Kestrel__Endpoints__Https__Certificate__Password=${PFX_PASSWORD:-changeme_in_prod}
+      - GrpcSettings__ComputeUrl=http://library-compute:50052
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=librarydb;Username=user;Password=${DB_PASSWORD:-changeme_in_prod}
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./logs/waf:/var/log/waf:ro
+      - ./certs:/etc/certs:ro
     networks:
       - library-net
     restart: unless-stopped
@@ -47,8 +61,6 @@
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme_in_prod}
       - POSTGRES_DB=librarydb
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -69,6 +81,7 @@
     ports:
       - "80:80"
       - "9090:9090"
+      - "8443:8443"
     environment:
       - BACKEND_HOST=library-api:8080
     volumes:
@@ -80,6 +93,24 @@
       - library-api
     networks:
       - library-net
+
+  library-kiosk:
+    container_name: library-kiosk
+    build:
+      context: .
+      dockerfile: clients/cpp/Dockerfile
+    profiles:
+      - kiosk
+    environment:
+      - KIOSK_SERVER_ENDPOINT=library-waf:8443
+      - KIOSK_DEVICE_ID=KIOSK-DOCKER-001
+      - KIOSK_USE_TLS=1
+    volumes:
+      - ./certs:/etc/certs:ro
+    networks:
+      - library-net
+    depends_on:
+      - library-waf
 
 volumes:
   postgres_data:

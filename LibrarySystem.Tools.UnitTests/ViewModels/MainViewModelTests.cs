@@ -13,8 +13,9 @@ public class MainViewModelTests
     {
         var graph         = graphService ?? Mock.Of<IGraphDataService>();
         var log           = logService   ?? Mock.Of<ILogTailerService>();
+        var telemetry     = Mock.Of<ITelemetryService>();
         var notifications = new NotificationService();
-        var inspector     = new InspectorViewModel(graph, notifications);
+        var inspector     = new InspectorViewModel(graph, notifications, telemetry);
         var wafLogs       = new WafLogViewModel(log);
         return new MainViewModel(graph, inspector, wafLogs, notifications);
     }

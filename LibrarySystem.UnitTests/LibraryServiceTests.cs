@@ -29,8 +29,9 @@ public class LibraryServiceTests
         _fixture.Behaviors.Add(new OmitOnRecursionBehavior());
 
         _senderMock = new Mock<ISender>();
+        var computeClientMock = new Mock<Compute.ComputeClient>();
 
-        _sut = new LibraryService(_senderMock.Object);
+        _sut = new LibraryService(_senderMock.Object, computeClientMock.Object);
     }
 
     [Fact]
