@@ -27,7 +27,8 @@ int main(int argc, char** argv) {
 
     if (arg1 == "--validate" && argc == 3) {
         std::string card_uid = argv[2];
-        client.ValidateMember(card_uid);
+        bool is_valid = client.ValidateMember(card_uid);
+        std::cout << "Validation result for " << card_uid << ": " << (is_valid ? "VALID" : "INVALID") << std::endl;
     } else if (arg1 == "--return" && argc == 3) {
         std::string book_id = argv[2];
         client.ConnectAndSync(); // start network watcher

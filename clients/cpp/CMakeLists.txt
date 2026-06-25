@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Find packages provided by vcpkg
 find_package(gRPC CONFIG REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
+find_package(SQLite3 REQUIRED)
 
 # Include custom protobuf generation module
 include(cmake/Protobuf.cmake)
@@ -50,7 +51,7 @@ target_include_directories(kiosk PRIVATE
 target_link_libraries(kiosk PRIVATE
     gRPC::grpc++
     protobuf::libprotobuf
-    sqlite3
+    SQLite::SQLite3
 )
 
 # Testing
@@ -84,7 +85,7 @@ target_include_directories(kiosk_tests PRIVATE
 target_link_libraries(kiosk_tests PRIVATE
     GTest::gtest_main
     protobuf::libprotobuf
-    sqlite3
+    SQLite::SQLite3
 )
 
 add_test(NAME KioskTests COMMAND kiosk_tests)
@@ -107,5 +108,5 @@ target_include_directories(kiosk_benchmarks PRIVATE
 target_link_libraries(kiosk_benchmarks PRIVATE
     benchmark::benchmark_main
     protobuf::libprotobuf
-    sqlite3
+    SQLite::SQLite3
 )

@@ -57,6 +57,12 @@ jobs:
       - name: Run C++ Tests
         run: ctest --test-dir clients/cpp/build --output-on-failure
 
+      - name: Run E2E Integration Tests
+        run: |
+          chmod +x scripts/e2e-test.sh
+          chmod +x clients/cpp/scripts/setup-vcan.sh
+          ./scripts/e2e-test.sh
+
       - name: Generate C++ Coverage
         run: |
           mkdir -p coverage/cpp

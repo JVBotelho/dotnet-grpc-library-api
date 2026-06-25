@@ -126,7 +126,7 @@ bool OfflineStore::MarkAsSynced(const std::vector<int64_t>& ids) {
 
 void OfflineStore::SweepExpired() {
     if (!db_) return;
-    const char* sql = "DELETE FROM pending_events WHERE created_at < datetime('now', ?)";
+    const char* sql = "DELETE FROM pending_events WHERE created_at <= datetime('now', ?)";
     sqlite3_stmt* stmt;
     if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         std::cerr << "[OfflineStore] Failed to prepare sweep statement: " << sqlite3_errmsg(db_) << std::endl;

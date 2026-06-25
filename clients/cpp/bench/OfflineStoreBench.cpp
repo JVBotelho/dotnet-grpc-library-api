@@ -16,7 +16,7 @@ static void BM_OfflineStore_Enqueue(benchmark::State& state) {
     scan->set_book_id(1001);
 
     for (auto _ : state) {
-        store.EnqueueEvent(event);
+        store.StoreEvent(event);
     }
     
     std::filesystem::remove("bench_kiosk_offline.db");
@@ -31,7 +31,7 @@ static void BM_OfflineStore_Dequeue(benchmark::State& state) {
     BufferedEvent event;
     for (int i = 0; i < state.range(0); ++i) {
         event.set_idempotency_key("key-" + std::to_string(i));
-        store.EnqueueEvent(event);
+        store.StoreEvent(event);
     }
 
     for (auto _ : state) {
@@ -43,7 +43,7 @@ static void BM_OfflineStore_Dequeue(benchmark::State& state) {
             state.PauseTiming();
             for (int i = 0; i < state.range(0); ++i) {
                 event.set_idempotency_key("key-" + std::to_string(i));
-                store.EnqueueEvent(event);
+                store.StoreEvent(event);
             }
             state.ResumeTiming();
         }
