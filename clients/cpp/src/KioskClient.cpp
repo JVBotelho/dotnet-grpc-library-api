@@ -24,7 +24,7 @@ std::string ReadFileContents(const std::string& path) {
 }
 
 KioskClient::KioskClient(const KioskConfig& config)
-    : device_id_(config.device_id) {
+    : device_id_(config.device_id), api_key_(config.api_key) {
     
     std::shared_ptr<grpc::ChannelCredentials> creds;
     if (config.use_tls) {
@@ -51,7 +51,7 @@ KioskClient::KioskClient(const KioskConfig& config)
     
     // Initialize DeviceLink with a queue capacity of 10000 and DropOldest policy
     // Backpressure policy: DropOldest. Real-time telemetry prefers freshness over completeness.
-    device_link_ = std::make_unique<DeviceLink>(stub_.get(), 10000, QueuePolicy::DropOldest);
+    device_link_ = std::make_unique<DeviceLink>(stub_.get(), 10000, QueuePolicy::DropOldest, api_key_);
     device_link_->SetControlCommandCallback([this](const LibrarySystem::Contracts::Protos::ControlCommand& cmd) {
         this->ProcessControlCommand(cmd);
     });
@@ -72,6 +72,7 @@ bool KioskClient::ValidateMember(const std::string& card_uid) {
     ValidateMemberResponse reply;
     ClientContext context;
     context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
+    if (!api_key_.empty()) context.AddMetadata("x-api-key", api_key_);
 
     std::cout << "[Client] Validating card " << card_uid << "..." << std::endl;
     Status status = stub_->ValidateMember(&context, request, &reply);
@@ -122,6 +123,7 @@ void KioskClient::BulkReturn(const std::string& book_id) {
 
     ClientContext context;
     context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
+    if (!api_key_.empty()) context.AddMetadata("x-api-key", api_key_);
     
     LibrarySystem::Contracts::Protos::BulkReturnSummary summary;
     auto stream = stub_->BulkReturn(&context, &summary);
@@ -242,6 +244,7 @@ void KioskClient::SyncQueueLoop() {
 
         ClientContext context;
         context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(10));
+        if (!api_key_.empty()) context.AddMetadata("x-api-key", api_key_);
 
         LibrarySystem::Contracts::Protos::SyncSummary summary;
         auto stream = stub_->SyncOfflineQueue(&context, &summary);

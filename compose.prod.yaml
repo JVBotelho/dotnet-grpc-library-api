@@ -1,11 +1,15 @@
+# Production compose — uses pre-built images from ghcr.io.
+# No compilation required. Run with:
+#
+#   docker compose -f compose.prod.yaml up
+#
+# Images are built and published automatically by CI on every push to main.
+
 services:
   library-api:
     container_name: library-api
-    build:
-      context: .
-      dockerfile: LibrarySystem.Api/Dockerfile
-#    ports:
-#      - "5000:8080"
+    image: ghcr.io/jvbotelho/library-system-api:latest
+    pull_policy: always
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - GrpcSettings__ServiceUrl=http://library-grpc:8080
@@ -22,12 +26,34 @@ services:
 
   library-compute:
     container_name: library-compute
-    build:
-      context: .
-      dockerfile: services/cpp-compute/Dockerfile
+    image: ghcr.io/jvbotelho/library-system-cpp-compute:latest
+    pull_policy: always
     networks:
       - library-net
     restart: unless-stopped
+
+  library-kiosk:
+    container_name: library-kiosk
+    image: ghcr.io/jvbotelho/library-system-kiosk:latest
+    pull_policy: always
+    profiles:
+      - kiosk
+    ports:
+      - "5555:5555/udp"
+    environment:
+      - KIOSK_SERVER_ENDPOINT=library-grpc:8443
+      - KIOSK_DEVICE_ID=KIOSK-001
+      - KIOSK_USE_TLS=1
+      - KIOSK_ROOT_CERTS_PATH=/etc/certs/ca.crt
+      - KIOSK_CERT_CHAIN_PATH=/etc/certs/client.crt
+      - KIOSK_PRIVATE_KEY_PATH=/etc/certs/client.key
+      - KIOSK_API_KEY=${KIOSK_API_KEY:-secret-kiosk-key}
+    volumes:
+      - ./certs:/etc/certs:ro
+    networks:
+      - library-net
+    depends_on:
+      - library-grpc
 
   cert-generator:
     container_name: cert-generator
@@ -39,9 +65,8 @@ services:
 
   library-grpc:
     container_name: library-grpc
-    build:
-      context: .
-      dockerfile: LibrarySystem.Grpc/Dockerfile
+    image: ghcr.io/jvbotelho/library-system-grpc:latest
+    pull_policy: always
     ports:
       - "5001:8080"
       - "8443:8443"
@@ -83,12 +108,11 @@ services:
     networks:
       - library-net
     restart: always
-      
+
   waf:
-    build:
-      context: ./Waf
-      dockerfile: Dockerfile
     container_name: library-waf
+    image: ghcr.io/jvbotelho/library-system-waf:latest
+    pull_policy: always
     restart: unless-stopped
     ports:
       - "80:80"
@@ -105,33 +129,9 @@ services:
     networks:
       - library-net
 
-  library-kiosk:
-    container_name: library-kiosk
-    build:
-      context: .
-      dockerfile: clients/cpp/Dockerfile
-    profiles:
-      - kiosk
-    ports:
-      - "5555:5555/udp"
-    environment:
-      - KIOSK_SERVER_ENDPOINT=library-grpc:8443
-      - KIOSK_DEVICE_ID=KIOSK-001
-      - KIOSK_USE_TLS=1
-      - KIOSK_ROOT_CERTS_PATH=/etc/certs/ca.crt
-      - KIOSK_CERT_CHAIN_PATH=/etc/certs/client.crt
-      - KIOSK_PRIVATE_KEY_PATH=/etc/certs/client.key
-      - KIOSK_API_KEY=${KIOSK_API_KEY:-secret-kiosk-key}
-    volumes:
-      - ./certs:/etc/certs:ro
-    networks:
-      - library-net
-    depends_on:
-      - library-grpc
-
 volumes:
   postgres_data:
-    
+
 networks:
   library-net:
     driver: bridge

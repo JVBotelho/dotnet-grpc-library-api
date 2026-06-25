@@ -12,7 +12,7 @@ enum class QueuePolicy { DropOldest, Block };
 
 class DeviceLink {
 public:
-    DeviceLink(LibrarySystem::Contracts::Protos::Kiosk::Stub* stub, int queue_capacity, QueuePolicy queue_policy);
+    DeviceLink(LibrarySystem::Contracts::Protos::Kiosk::Stub* stub, int queue_capacity, QueuePolicy queue_policy, const std::string& api_key);
     ~DeviceLink();
 
     void Start();
@@ -25,6 +25,7 @@ private:
     LibrarySystem::Contracts::Protos::Kiosk::Stub* stub_;
     int queue_capacity_;
     QueuePolicy queue_policy_;
+    std::string api_key_;
 
     std::atomic<bool> running_{false};
     std::atomic<bool> is_online_{true};

@@ -1,8 +1,10 @@
-﻿# Estágio de Build
+# Estágio de Build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # 1. Copiar csproj e restaurar
+COPY ["Directory.Packages.props", "."]
+COPY ["Directory.Build.props", "."]
 COPY ["LibrarySystem.Api/LibrarySystem.Api.csproj", "LibrarySystem.Api/"]
 COPY ["LibrarySystem.Contracts/LibrarySystem.Contracts.csproj", "LibrarySystem.Contracts/"]
 

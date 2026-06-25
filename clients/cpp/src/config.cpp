@@ -41,5 +41,11 @@ KioskConfig KioskConfig::load_from_env() {
         config.private_key_path = "certs/client.key";
     }
 
+    if (const char* env_api_key = std::getenv("KIOSK_API_KEY")) {
+        config.api_key = env_api_key;
+    } else {
+        config.api_key = ""; // Empty string will be rejected by server
+    }
+
     return config;
 }

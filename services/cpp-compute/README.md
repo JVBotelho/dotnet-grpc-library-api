@@ -6,12 +6,13 @@ This is the C++ Compute Node for the Library System, responsible for heavy compu
 
 - **Framework:** gRPC (C++)
 - **Concurrency:** Thread-per-request (or async depending on gRPC setup)
-- **Hardware Dependency:** This node heavily relies on GPU acceleration for tensor operations. It requires **NVIDIA CUDA** architecture (Compute Capability 7.0 or higher recommended). Running this service on a CPU-only host will result in severe performance degradation and potential timeouts during image processing.
+- **Hardware Dependency (Current):** None. The current implementation uses CPU-bound cryptographic hashing (SHA-256 via OpenSSL) as a placeholder for the perceptual hash baseline.
+- **Hardware Dependency (Target Phase 7):** Once anomaly detection and true perceptual tensor hashing are introduced, this node will require GPU acceleration (**NVIDIA CUDA**, Compute Capability 7.0+). Running the future version on a CPU-only host will cause performance degradation.
 
 ## Future Plans (Phase 7)
 
-In Phase 7, this service will be integrated directly into the deployment pipeline with automated test coverage enforcement. 
-Code coverage metrics (C++) will be collected alongside C# metrics to ensure the minimum 60% coverage threshold is met across the entire codebase.
+In Phase 7, this service will be integrated directly into the deployment pipeline with automated test coverage enforcement. Code coverage metrics (C++) will be collected alongside C# metrics.
+Furthermore, the hashing logic will be replaced with a real ML tensor model for anomaly detection on book images, at which point the CUDA hardware requirement will take effect.
 
 ### Security Notes
 - Inputs over 5MB are rejected to prevent resource exhaustion.

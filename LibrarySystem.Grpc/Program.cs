@@ -20,6 +20,11 @@ builder.WebHost.ConfigureKestrel(options =>
     options.ConfigureHttpsDefaults(httpsOptions =>
     {
         httpsOptions.ClientCertificateMode = Microsoft.AspNetCore.Server.Kestrel.Https.ClientCertificateMode.RequireCertificate;
+        // Intentionally defer chain validation to the CertificateAuthentication middleware
+        // (OnCertificateValidated / CustomTrustStore below). Kestrel's built-in OS chain
+        // validator doesn't know about our private dev CA, so returning true here and
+        // enforcing the custom anchor in the auth handler is the correct pattern.
+        httpsOptions.ClientCertificateValidation = (cert, chain, errors) => true;
     });
 });
 
@@ -29,15 +34,29 @@ builder.Services.AddGrpcClient<LibrarySystem.Contracts.Protos.Compute.ComputeCli
     o.Address = new Uri(url);
 });
 
+const string CaPath = "/etc/certs/ca.crt";
+
 builder.Services.AddAuthentication(CertificateAuthenticationDefaults.AuthenticationScheme)
     .AddCertificate(options =>
     {
-        if (!builder.Environment.IsDevelopment())
+        if (System.IO.File.Exists(CaPath))
         {
-            options.RevocationMode = X509RevocationMode.Online;
+            options.CustomTrustStore.Clear();
+            options.CustomTrustStore.Add(X509CertificateLoader.LoadCertificateFromFile(CaPath));
+            options.ChainTrustValidationMode = X509ChainTrustMode.CustomRootTrust;
+            options.RevocationMode = X509RevocationMode.NoCheck;
+        }
+        else if (!builder.Environment.IsDevelopment())
+        {
+            // Fail-fast: without a pinned CA anchor any cert with a public-CA-signed chain
+            // would pass chain validation — that is not an acceptable posture for this service.
+            throw new InvalidOperationException(
+                $"CA certificate not found at '{CaPath}'. " +
+                "The mTLS trust anchor is required in non-development environments.");
         }
         else
         {
+            // Dev-only fallback: no custom trust store, CN check in OnCertificateValidated still applies.
             options.RevocationMode = X509RevocationMode.NoCheck;
         }
         

@@ -38,6 +38,7 @@ private:
     void SyncQueueLoop();
 
     std::string device_id_;
+    std::string api_key_;
     std::shared_ptr<grpc::Channel> channel_;
     std::unique_ptr<LibrarySystem::Contracts::Protos::Kiosk::Stub> stub_;
     std::unique_ptr<OfflineStore> offline_store_;

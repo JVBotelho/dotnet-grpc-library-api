@@ -78,7 +78,7 @@ public class DeviceIdentityInterceptor : Interceptor
     {
         if (context.Method.Contains("/Kiosk/") || context.Method.Contains("/Telemetry/"))
         {
-            var wrapper = new FirstMessageStreamReaderWrapper<TRequest>(requestStream, request =>
+            var wrapper = new ValidatingStreamReaderWrapper<TRequest>(requestStream, request =>
             {
                 var deviceId = ExtractDeviceId(request);
                 AuthenticateDevice(context, deviceId);
@@ -110,7 +110,7 @@ public class DeviceIdentityInterceptor : Interceptor
     {
         if (context.Method.Contains("/Kiosk/") || context.Method.Contains("/Telemetry/"))
         {
-            var wrapper = new FirstMessageStreamReaderWrapper<TRequest>(requestStream, request =>
+            var wrapper = new ValidatingStreamReaderWrapper<TRequest>(requestStream, request =>
             {
                 var deviceId = ExtractDeviceId(request);
                 AuthenticateDevice(context, deviceId);
@@ -124,16 +124,15 @@ public class DeviceIdentityInterceptor : Interceptor
     }
 }
 
-public class FirstMessageStreamReaderWrapper<T> : IAsyncStreamReader<T>
+public class ValidatingStreamReaderWrapper<T> : IAsyncStreamReader<T>
 {
     private readonly IAsyncStreamReader<T> _inner;
-    private readonly Action<T> _onFirstMessage;
-    private bool _firstMessageRead;
+    private readonly Action<T> _onEachMessage;
 
-    public FirstMessageStreamReaderWrapper(IAsyncStreamReader<T> inner, Action<T> onFirstMessage)
+    public ValidatingStreamReaderWrapper(IAsyncStreamReader<T> inner, Action<T> onEachMessage)
     {
         _inner = inner;
-        _onFirstMessage = onFirstMessage;
+        _onEachMessage = onEachMessage;
     }
 
     public T Current => _inner.Current;
@@ -141,10 +140,11 @@ public class FirstMessageStreamReaderWrapper<T> : IAsyncStreamReader<T>
     public async Task<bool> MoveNext(CancellationToken cancellationToken)
     {
         var hasNext = await _inner.MoveNext(cancellationToken);
-        if (hasNext && !_firstMessageRead)
+        if (hasNext)
         {
-            _firstMessageRead = true;
-            _onFirstMessage(_inner.Current);
+            // Validate DeviceId == cert CN on every message so a caller cannot spoof
+            // a different device identity after the first message has been accepted.
+            _onEachMessage(_inner.Current);
         }
         return hasNext;
     }

@@ -44,7 +44,7 @@ public partial class App : Application
                 if (!string.IsNullOrEmpty(certPath) && System.IO.File.Exists(certPath))
                 {
                     // WPF uses the pfx version for easy loading with private key
-                    handler.ClientCertificates.Add(new System.Security.Cryptography.X509Certificates.X509Certificate2(certPath, "password"));
+                    handler.ClientCertificates.Add(System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12FromFile(certPath, "password"));
                 }
                 
                 var channelOptions = new GrpcChannelOptions { HttpHandler = handler };

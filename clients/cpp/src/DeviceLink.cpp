@@ -6,8 +6,8 @@ using grpc::Status;
 using LibrarySystem::Contracts::Protos::DeviceFrame;
 using LibrarySystem::Contracts::Protos::ControlCommand;
 
-DeviceLink::DeviceLink(LibrarySystem::Contracts::Protos::Kiosk::Stub* stub, int queue_capacity, QueuePolicy queue_policy)
-    : stub_(stub), queue_capacity_(queue_capacity), queue_policy_(queue_policy) {}
+DeviceLink::DeviceLink(LibrarySystem::Contracts::Protos::Kiosk::Stub* stub, int queue_capacity, QueuePolicy queue_policy, const std::string& api_key)
+    : stub_(stub), queue_capacity_(queue_capacity), queue_policy_(queue_policy), api_key_(api_key) {}
 
 DeviceLink::~DeviceLink() {
     Stop();
@@ -24,6 +24,7 @@ void DeviceLink::Start() {
 
     worker_thread_ = std::thread([this]() {
         ClientContext context;
+        if (!api_key_.empty()) context.AddMetadata("x-api-key", api_key_);
         auto stream = stub_->DeviceLink(&context);
 
         std::thread reader([this, stream = stream.get()]() {

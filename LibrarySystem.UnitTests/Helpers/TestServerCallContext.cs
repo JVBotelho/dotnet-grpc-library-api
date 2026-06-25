@@ -20,10 +20,10 @@ public class TestServerCallContext : ServerCallContext
     protected override CancellationToken CancellationTokenCore => CancellationToken.None;
     protected override Metadata ResponseTrailersCore => new Metadata();
     protected override Status StatusCore { get; set; }
-    protected override WriteOptions WriteOptionsCore { get; set; }
+    protected override WriteOptions? WriteOptionsCore { get; set; }
     protected override AuthContext AuthContextCore => new AuthContext(null, new Dictionary<string, List<AuthProperty>>());
 
-    protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions options) => null!;
+    protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions? options) => null!;
     protected override Task WriteResponseHeadersAsyncCore(Metadata responseHeaders) => Task.CompletedTask;
 
     public static ServerCallContext Create(Metadata? requestHeaders = null)

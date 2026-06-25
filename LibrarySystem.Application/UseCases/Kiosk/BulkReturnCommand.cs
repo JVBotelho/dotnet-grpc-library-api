@@ -40,6 +40,22 @@ public class BulkReturnCommandHandler : IRequestHandler<BulkReturnCommand, BulkR
                 continue;
             }
 
+            // Claim the idempotency slot before mutating book state.
+            // Concurrent replays will race here; the unique constraint on IdempotencyKey
+            // ensures only one caller wins. If we lose the race, treat it as a duplicate.
+            await _processedEventRepository.AddAsync(new ProcessedEvent(scan.IdempotencyKey), cancellationToken);
+            try
+            {
+                await _processedEventRepository.SaveChangesAsync(cancellationToken);
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+                when (ex.InnerException?.Message.Contains("duplicate key") == true
+                   || ex.InnerException?.Message.Contains("23505") == true)
+            {
+                duplicates++;
+                continue;
+            }
+
             if (!booksDict.TryGetValue(scan.BookId, out var book))
             {
                 unknownBookIds.Add(scan.BookId);
@@ -51,22 +67,19 @@ public class BulkReturnCommandHandler : IRequestHandler<BulkReturnCommand, BulkR
             if (activeLending != null)
             {
                 book.ReturnCopy(activeLending.Id);
-                await _processedEventRepository.AddAsync(new ProcessedEvent(scan.IdempotencyKey), cancellationToken);
                 accepted++;
             }
             else
             {
-                await _processedEventRepository.AddAsync(new ProcessedEvent(scan.IdempotencyKey), cancellationToken);
                 rejected++;
             }
         }
 
-        if (accepted > 0 || rejected > 0)
+        if (accepted > 0)
         {
             await _bookRepository.SaveChangesAsync(cancellationToken);
-            await _processedEventRepository.SaveChangesAsync(cancellationToken);
         }
-        
+
         return new BulkReturnResult(accepted, rejected, unknownBookIds, duplicates);
     }
 }

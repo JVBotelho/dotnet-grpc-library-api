@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using AutoFixture;
 
 Console.WriteLine("Testing the IsPowerOfTwo method:");
@@ -32,17 +32,17 @@ foreach (var title in allTestTitles) Console.WriteLine($"Original: '{title}' -> 
 Console.WriteLine("\nWarm-up Task 3: Generate Book Title Replicas.");
 Console.WriteLine("\nTesting the GenerateReplicas method:");
 
-var testCases = new[]
+var testCases = new (string? Title, int Count)[]
 {
-    new { Title = "Read", Count = 3 },
-    new { Title = "1984", Count = 2 },
-    new { Title = "Echo", Count = 5 },
-    new { Title = "Single", Count = 1 },
-    new { Title = "ZeroCount", Count = 0 },
-    new { Title = "NegativeCount", Count = -5 },
-    new { Title = fixture.Create<string>(), Count = fixture.Create<int>() },
-    new { Title = "Empty", Count = 100 },
-    new { Title = (string?)null, Count = 10 }
+    ("Read", 3),
+    ("1984", 2),
+    ("Echo", 5),
+    ("Single", 1),
+    ("ZeroCount", 0),
+    ("NegativeCount", -5),
+    (fixture.Create<string>(), fixture.Create<int>()),
+    ("Empty", 100),
+    (null, 10)
 };
 foreach (var testCase in testCases)
 {

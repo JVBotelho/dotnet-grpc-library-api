@@ -90,4 +90,58 @@ public class KioskIdempotencyTests : IAsyncLifetime
             result.DuplicatesSkipped.Should().Be(1);
         }
     }
+
+    [Fact]
+    public async Task BulkReturn_ConcurrentReplay_ShouldNotDoubleReturn()
+    {
+        // Arrange
+        var options = CreateNewContextOptions();
+
+        using (var context = new LibraryDbContext(options))
+        {
+            await context.Database.EnsureCreatedAsync();
+
+            var book = new Book("Concurrent Test Book", "Author", 2026, 100, 1);
+            context.Books.Add(book);
+            var borrower = new Borrower("Concurrent User", "concurrent@test.com");
+            context.Borrowers.Add(borrower);
+            await context.SaveChangesAsync();
+
+            book.BorrowCopy(borrower);
+            await context.SaveChangesAsync();
+        }
+
+        var scanDto = new ReturnScanDto(1, DateTime.UtcNow, "txn_race_key");
+        var command = new BulkReturnCommand("KIOSK-01", new[] { scanDto });
+
+        // Act: two concurrent handlers race with the same idempotency key.
+        // One must win (accept) and the other must lose (duplicate), never double-return.
+        var task1 = Task.Run(async () =>
+        {
+            using var ctx = new LibraryDbContext(options);
+            return await new BulkReturnCommandHandler(new BookRepository(ctx), new ProcessedEventRepository(ctx))
+                .Handle(command, CancellationToken.None);
+        });
+
+        var task2 = Task.Run(async () =>
+        {
+            using var ctx = new LibraryDbContext(options);
+            return await new BulkReturnCommandHandler(new BookRepository(ctx), new ProcessedEventRepository(ctx))
+                .Handle(command, CancellationToken.None);
+        });
+
+        var results = await Task.WhenAll(task1, task2);
+
+        // Assert
+        var totalAccepted = results.Sum(r => r.Accepted);
+        totalAccepted.Should().Be(1, "exactly one handler should succeed in returning the book — no double-return");
+
+        // Verify the idempotency key is stored exactly once regardless of which handler won.
+        using (var verifyCtx = new LibraryDbContext(options))
+        {
+            var storedCount = await verifyCtx.ProcessedEvents
+                .CountAsync(e => e.IdempotencyKey == "txn_race_key");
+            storedCount.Should().Be(1);
+        }
+    }
 }

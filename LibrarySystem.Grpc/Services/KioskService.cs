@@ -1,11 +1,13 @@
 using Grpc.Core;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using LibrarySystem.Contracts.Protos;
 using LibrarySystem.Application.UseCases.Kiosk;
 using KioskContracts = LibrarySystem.Contracts.Protos.Kiosk;
 
 namespace LibrarySystem.Grpc.Services;
 
+[Authorize]
 public class KioskService : KioskContracts.KioskBase
 {
     private readonly IMediator _mediator;
@@ -161,7 +163,8 @@ public class KioskService : KioskContracts.KioskBase
                     frame.BayOccupancy, 
                     frame.FaultFlags);
 
-            var controlCmd = await _mediator.Send(new EvaluateFrameCommand(dto));
+            var idKey = $"{frame.DeviceId}_{frame.SampledAt.Seconds}_{frame.SampledAt.Nanos}";
+            var controlCmd = await _mediator.Send(new EvaluateFrameCommand(dto, idKey));
             
             if (controlCmd != null)
             {

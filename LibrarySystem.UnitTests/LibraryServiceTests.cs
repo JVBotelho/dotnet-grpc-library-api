@@ -29,7 +29,7 @@ public class LibraryServiceTests
         _fixture.Behaviors.Add(new OmitOnRecursionBehavior());
 
         _senderMock = new Mock<ISender>();
-        var computeClientMock = new Mock<Compute.ComputeClient>();
+        var computeClientMock = new Mock<LibrarySystem.Application.Abstractions.Services.IImageHashingService>();
 
         _sut = new LibraryService(_senderMock.Object, computeClientMock.Object);
     }

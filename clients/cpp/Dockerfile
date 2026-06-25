@@ -13,11 +13,11 @@ RUN git clone https://github.com/microsoft/vcpkg.git $VCPKG_ROOT \
 
 # Copy proto definitions
 WORKDIR /app/LibrarySystem.Contracts
-COPY LibrarySystem.Contracts/Protos/compute.proto ./Protos/
+COPY LibrarySystem.Contracts/Protos/*.proto ./Protos/
 
-# Build compute server
-WORKDIR /app/services/cpp-compute
-COPY services/cpp-compute .
+# Build kiosk client
+WORKDIR /app/clients/cpp
+COPY clients/cpp .
 
 # Configure and build
 RUN cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
@@ -25,7 +25,6 @@ RUN cmake --build build --config Release
 
 FROM ubuntu:22.04
 WORKDIR /app
-COPY --from=builder /app/services/cpp-compute/build/cpp_compute .
+COPY --from=builder /app/clients/cpp/build/kiosk .
 
-EXPOSE 50052
-ENTRYPOINT ["./cpp_compute"]
+ENTRYPOINT ["./kiosk", "--can-link", "udp:5555"]

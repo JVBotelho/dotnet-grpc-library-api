@@ -1,4 +1,4 @@
-﻿using Google.Protobuf.WellKnownTypes;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using LibrarySystem.Contracts.Protos;
 using Microsoft.AspNetCore.Mvc;
@@ -36,7 +36,7 @@ public class BorrowersController : ControllerBase
             var response = await _grpcClient.GetTopBorrowersAsync(request);
             return Ok(response.TopBorrowers);
         }
-        catch (RpcException ex)
+        catch (RpcException)
         {
             return StatusCode(500, "An error occurred while communicating with the service.");
         }
@@ -61,7 +61,7 @@ public class BorrowersController : ControllerBase
             var response = await _grpcClient.GetUserLendingHistoryAsync(request);
             return Ok(response.History);
         }
-        catch (RpcException ex)
+        catch (RpcException)
         {
             return StatusCode(500, "An error occurred while communicating with the service.");
         }

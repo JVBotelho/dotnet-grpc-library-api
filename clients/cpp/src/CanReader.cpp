@@ -11,6 +11,8 @@
 #include <sys/socket.h>
 #include <linux/can.h>
 #include <linux/can/raw.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #else
 // Mock for compilation on Windows (WSL2/Docker should be used for real CAN)
 struct canfd_frame {
@@ -45,6 +47,16 @@ int bind(int sockfd, const struct sockaddr *addr, unsigned int addrlen) { return
 int setsockopt(int sockfd, int level, int optname, const void *optval, unsigned int optlen) { return -1; }
 int read(int fd, void *buf, unsigned int count) { return -1; }
 int close(int fd) { return -1; }
+#define AF_INET 2
+#define SOCK_DGRAM 2
+#define INADDR_ANY 0
+uint16_t htons(uint16_t hostshort) { return hostshort; }
+struct sockaddr_in {
+    short sin_family;
+    uint16_t sin_port;
+    struct { uint32_t s_addr; } sin_addr;
+    char sin_zero[8];
+};
 #endif
 
 CanReader::CanReader(const std::string& interface_name, const std::string& device_id)
@@ -58,42 +70,76 @@ CanReader::~CanReader() {
 bool CanReader::Start(FrameCallback callback) {
     if (running_) return false;
 
-    socket_fd_ = socket(PF_CAN, SOCK_RAW, CAN_RAW);
-    if (socket_fd_ < 0) {
-        std::cerr << "[CanReader] Failed to open CAN socket. Ensure you run this on Linux." << std::endl;
-        return false;
-    }
-
-    int enable_canfd = 1;
-    if (setsockopt(socket_fd_, SOL_CAN_RAW, CAN_RAW_FD_FRAMES, &enable_canfd, sizeof(enable_canfd)) != 0) {
-        std::cerr << "[CanReader] Failed to enable CAN-FD. Make sure MTU is 72." << std::endl;
-    }
-
-    struct ifreq ifr;
-    std::strncpy(ifr.ifr_name, interface_name_.c_str(), sizeof(ifr.ifr_name) - 1);
-    ifr.ifr_name[sizeof(ifr.ifr_name) - 1] = '\0';
+    bool is_udp = (interface_name_.substr(0, 4) == "udp:");
     
-    if (ioctl(socket_fd_, SIOCGIFINDEX, &ifr) < 0) {
-        std::cerr << "[CanReader] Failed to find interface " << interface_name_ << std::endl;
-        close(socket_fd_);
-        return false;
-    }
+    if (is_udp) {
+        int port = 0;
+        try {
+            port = std::stoi(interface_name_.substr(4));
+        } catch (const std::exception&) {
+            std::cerr << "[CanReader] Invalid UDP port in '" << interface_name_ << "'" << std::endl;
+            return false;
+        }
+        if (port < 1 || port > 65535) {
+            std::cerr << "[CanReader] UDP port out of range: " << port << std::endl;
+            return false;
+        }
+        socket_fd_ = socket(AF_INET, SOCK_DGRAM, 0);
+        if (socket_fd_ < 0) {
+            std::cerr << "[CanReader] Failed to open UDP socket" << std::endl;
+            return false;
+        }
+        
+        struct sockaddr_in servaddr;
+        std::memset(&servaddr, 0, sizeof(servaddr));
+        servaddr.sin_family = AF_INET;
+        servaddr.sin_addr.s_addr = INADDR_ANY;
+        servaddr.sin_port = htons(port);
+        
+        if (bind(socket_fd_, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
+            std::cerr << "[CanReader] Failed to bind UDP socket on port " << port << std::endl;
+            close(socket_fd_);
+            return false;
+        }
+        std::cout << "[CanReader] Started listening on UDP port " << port << " (CAN Emulator Mode)" << std::endl;
+    } else {
+        socket_fd_ = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+        if (socket_fd_ < 0) {
+            std::cerr << "[CanReader] Failed to open CAN socket. Ensure you run this on Linux." << std::endl;
+            return false;
+        }
 
-    struct sockaddr_can addr;
-    addr.can_family = PF_CAN;
-    addr.can_ifindex = ifr.ifr_ifindex;
+        int enable_canfd = 1;
+        if (setsockopt(socket_fd_, SOL_CAN_RAW, CAN_RAW_FD_FRAMES, &enable_canfd, sizeof(enable_canfd)) != 0) {
+            std::cerr << "[CanReader] Failed to enable CAN-FD. Make sure MTU is 72." << std::endl;
+        }
 
-    if (bind(socket_fd_, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        std::cerr << "[CanReader] Failed to bind CAN socket" << std::endl;
-        close(socket_fd_);
-        return false;
+        struct ifreq ifr;
+        std::strncpy(ifr.ifr_name, interface_name_.c_str(), sizeof(ifr.ifr_name) - 1);
+        ifr.ifr_name[sizeof(ifr.ifr_name) - 1] = '\0';
+        
+        if (ioctl(socket_fd_, SIOCGIFINDEX, &ifr) < 0) {
+            std::cerr << "[CanReader] Failed to find interface " << interface_name_ << std::endl;
+            close(socket_fd_);
+            return false;
+        }
+
+        struct sockaddr_can addr;
+        addr.can_family = PF_CAN;
+        addr.can_ifindex = ifr.ifr_ifindex;
+
+        if (bind(socket_fd_, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+            std::cerr << "[CanReader] Failed to bind CAN socket" << std::endl;
+            close(socket_fd_);
+            return false;
+        }
+        std::cout << "[CanReader] Started listening on CAN interface " << interface_name_ << std::endl;
     }
 
     callback_ = callback;
     running_ = true;
     thread_ = std::thread(&CanReader::RunLoop, this);
     
-    std::cout << "[CanReader] Started listening on " << interface_name_ << std::endl;
     return true;
 }
 

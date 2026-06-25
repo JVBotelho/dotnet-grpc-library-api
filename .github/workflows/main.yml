@@ -15,6 +15,7 @@ jobs:
   build-and-test:
     name: Build & Test (Linux)
     runs-on: ubuntu-latest
+    timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -45,14 +46,73 @@ jobs:
       - name: Install C++ Coverage Tools
         run: sudo apt-get update && sudo apt-get install -y gcovr
 
-      - name: Configure C++ CMake
+      - name: Fetch vcpkg baseline
+        # Fetch only the specific baseline commit declared in vcpkg.json files.
+        # --unshallow / --all downloads the entire vcpkg history (GB) and hangs runners.
+        run: sudo git -C $VCPKG_INSTALLATION_ROOT fetch origin d9d4599ab67bd4e3297e5a43c837e04104e280d8 --depth=1
+
+      - name: Restore vcpkg installed directories
+        id: vcpkg-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            clients/cpp/build/vcpkg_installed
+            services/cpp-compute/build/vcpkg_installed
+            ~/.cache/vcpkg
+          key: ${{ runner.os }}-vcpkg-rel-${{ hashFiles('clients/cpp/vcpkg.json', 'services/cpp-compute/vcpkg.json', 'triplets/x64-linux-rel.cmake') }}
+          restore-keys: |
+            ${{ runner.os }}-vcpkg-rel-
+
+      - name: Create release-only vcpkg triplet
+        # Written at runtime so the workflow is self-contained — no committed file needed.
+        # VCPKG_BUILD_TYPE=release skips the x64-linux-dbg step for every package.
+        # gRPC debug binaries with DWARF symbols exhaust the 7 GB RAM on ubuntu-latest.
         run: |
+          mkdir -p "${{ github.workspace }}/triplets"
+          cat > "${{ github.workspace }}/triplets/x64-linux-rel.cmake" << 'EOF'
+          set(VCPKG_TARGET_ARCHITECTURE x64)
+          set(VCPKG_CRT_LINKAGE dynamic)
+          set(VCPKG_LIBRARY_LINKAGE static)
+          set(VCPKG_CMAKE_SYSTEM_NAME Linux)
+          set(VCPKG_BUILD_TYPE release)
+          EOF
+
+      - name: Configure C++ CMake
+        env:
+          VCPKG_MAX_CONCURRENCY: "1"
+          # Env vars are more reliable than -D flags when vcpkg is invoked internally
+          # by the cmake toolchain file. Setting both ensures the triplet is applied.
+          VCPKG_DEFAULT_TRIPLET: "x64-linux-rel"
+          VCPKG_DEFAULT_HOST_TRIPLET: "x64-linux-rel"
+          VCPKG_OVERLAY_TRIPLETS: "${{ github.workspace }}/triplets"
+        run: |
+          TRIPLETS="${{ github.workspace }}/triplets"
           cmake -S clients/cpp -B clients/cpp/build \
                 -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake \
+                -DVCPKG_OVERLAY_TRIPLETS="$TRIPLETS" \
+                -DVCPKG_TARGET_TRIPLET=x64-linux-rel \
+                -DCMAKE_BUILD_TYPE=Release \
                 -DENABLE_COVERAGE=ON
+          cmake -S services/cpp-compute -B services/cpp-compute/build \
+                -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake \
+                -DVCPKG_OVERLAY_TRIPLETS="$TRIPLETS" \
+                -DVCPKG_TARGET_TRIPLET=x64-linux-rel \
+                -DCMAKE_BUILD_TYPE=Release
+
+      - name: Save vcpkg installed directories
+        if: steps.vcpkg-cache-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            clients/cpp/build/vcpkg_installed
+            services/cpp-compute/build/vcpkg_installed
+            ~/.cache/vcpkg
+          key: ${{ runner.os }}-vcpkg-rel-${{ hashFiles('clients/cpp/vcpkg.json', 'services/cpp-compute/vcpkg.json', 'triplets/x64-linux-rel.cmake') }}
 
       - name: Build C++
-        run: cmake --build clients/cpp/build
+        run: |
+          cmake --build clients/cpp/build --parallel 2
+          cmake --build services/cpp-compute/build --parallel 2
 
       - name: Run C++ Tests
         run: ctest --test-dir clients/cpp/build --output-on-failure
@@ -66,7 +126,7 @@ jobs:
       - name: Generate C++ Coverage
         run: |
           mkdir -p coverage/cpp
-          gcovr -r clients/cpp clients/cpp/build --cobertura -o coverage/cpp/coverage.cobertura.xml
+          gcovr -r clients/cpp clients/cpp/build --filter '.*/clients/cpp/src/.*' --exclude '.*/tests/.*' --exclude '.*/vcpkg_installed/.*' --cobertura -o coverage/cpp/coverage.cobertura.xml
 
       - name: Merge Coverage Reports
         uses: danielpalme/ReportGenerator-GitHub-Action@v5
@@ -95,9 +155,126 @@ jobs:
           recreate: true
           path: code-coverage-results.md
 
+      - name: Upload cpp-compute binary
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cpp-compute-binary
+          path: services/cpp-compute/build/cpp_compute
+          retention-days: 1
+
+      - name: Upload kiosk binary
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: kiosk-binary
+          path: clients/cpp/build/kiosk
+          retention-days: 1
+
+  publish-images:
+    name: Publish Docker Images to ghcr.io
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [build-and-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Download cpp-compute binary
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: cpp-compute-binary
+          path: services/cpp-compute/build/
+
+      - name: Make cpp-compute binary executable
+        run: chmod +x services/cpp-compute/build/cpp_compute
+
+      - name: Download kiosk binary
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: kiosk-binary
+          path: clients/cpp/build/
+
+      - name: Make kiosk binary executable
+        run: chmod +x clients/cpp/build/kiosk
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push library-grpc
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: LibrarySystem.Grpc/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/jvbotelho/library-system-grpc:latest
+            ghcr.io/jvbotelho/library-system-grpc:${{ github.sha }}
+          cache-from: type=gha,scope=grpc
+          cache-to: type=gha,mode=max,scope=grpc
+
+      - name: Build and push library-api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: LibrarySystem.Api/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/jvbotelho/library-system-api:latest
+            ghcr.io/jvbotelho/library-system-api:${{ github.sha }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Build and push library-cpp-compute
+        # Uses Dockerfile.ci which just COPYs the pre-built binary — no vcpkg, no compilation.
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/cpp-compute/Dockerfile.ci
+          push: true
+          tags: |
+            ghcr.io/jvbotelho/library-system-cpp-compute:latest
+            ghcr.io/jvbotelho/library-system-cpp-compute:${{ github.sha }}
+          cache-from: type=gha,scope=cpp-compute
+          cache-to: type=gha,mode=max,scope=cpp-compute
+
+      - name: Build and push library-kiosk
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: clients/cpp/Dockerfile.ci
+          push: true
+          tags: |
+            ghcr.io/jvbotelho/library-system-kiosk:latest
+            ghcr.io/jvbotelho/library-system-kiosk:${{ github.sha }}
+          cache-from: type=gha,scope=kiosk
+          cache-to: type=gha,mode=max,scope=kiosk
+
+      - name: Build and push library-waf
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Waf
+          file: Waf/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/jvbotelho/library-system-waf:latest
+            ghcr.io/jvbotelho/library-system-waf:${{ github.sha }}
+          cache-from: type=gha,scope=waf
+          cache-to: type=gha,mode=max,scope=waf
+
   test-wpf:
     name: Test WPF Inspector (Windows)
     runs-on: windows-latest
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2

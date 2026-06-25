@@ -18,14 +18,28 @@ def main(interface="vcan0"):
         db = cantools.database.load_file(dbc_path)
         message = db.get_message_by_name('KioskTelemetry')
 
-        s = socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
-        s.bind((interface,))
-        
-        # Enable CAN-FD frames
-        s.setsockopt(SOL_CAN_RAW, CAN_RAW_FD_FRAMES, 1)
-
-        print(f"Sending CAN frames on {interface}...")
-        temp_c = 20.0
+        is_udp = False
+        dest = None
+        if interface.startswith("udp:"):
+            parts = interface.split(":")
+            if len(parts) == 3:
+                host = parts[1]
+                port = int(parts[2])
+            else:
+                host = '127.0.0.1'
+                port = int(parts[1])
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            print(f"Sending CAN frames via UDP Emulator on {host}:{port}...")
+            is_udp = True
+            dest = (host, port)
+        else:
+            s = socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
+            s.bind((interface,))
+            
+            # Enable CAN-FD frames
+            s.setsockopt(SOL_CAN_RAW, CAN_RAW_FD_FRAMES, 1)
+            print(f"Sending CAN frames on {interface}...")
+        temp_c = 78.0
         while True:
             # Encode using cantools according to DBC layout
             data = message.encode({
@@ -41,9 +55,12 @@ def main(interface="vcan0"):
             can_id |= 0x80000000 # EFF flag for extended format if desired
             
             import struct
-            frame = struct.pack('<IBBB', can_id, 8, 0, 0) + data + b'\x00' * (64 - len(data))
+            frame = struct.pack('<IBBBB', can_id, 8, 0, 0, 0) + data + b'\x00' * (64 - len(data))
             
-            s.send(frame[:72])
+            if is_udp:
+                s.sendto(frame[:72], dest)
+            else:
+                s.send(frame[:72])
             
             temp_c += 2.5
             if temp_c > 140.0:

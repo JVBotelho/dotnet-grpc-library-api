@@ -1,4 +1,5 @@
 syntax = "proto3";
+package LibrarySystem.Contracts.Protos;
 option csharp_namespace = "LibrarySystem.Contracts.Protos";
 
 service Compute {

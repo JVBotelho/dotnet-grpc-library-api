@@ -12,10 +12,12 @@ public record SyncSummaryResult(int Applied, int DuplicatesSkipped);
 public class SyncOfflineQueueCommandHandler : IRequestHandler<SyncOfflineQueueCommand, SyncSummaryResult>
 {
     private readonly IMediator _mediator;
+    private readonly IProcessedEventRepository _processedEventRepository;
 
-    public SyncOfflineQueueCommandHandler(IMediator mediator)
+    public SyncOfflineQueueCommandHandler(IMediator mediator, IProcessedEventRepository processedEventRepository)
     {
         _mediator = mediator;
+        _processedEventRepository = processedEventRepository;
     }
 
     public async Task<SyncSummaryResult> Handle(SyncOfflineQueueCommand request, CancellationToken cancellationToken)
@@ -33,10 +35,18 @@ public class SyncOfflineQueueCommandHandler : IRequestHandler<SyncOfflineQueueCo
             }
             else if (evt.Frame != null)
             {
-                // EvaluateFrameCommand currently doesn't return a duplicate count, but it handles idempotency.
-                // We'll just assume 1 applied for now.
+                // Pre-check idempotency so we can report an accurate duplicate count.
+                // EvaluateFrameCommand returns null for both "duplicate" and "no command needed",
+                // so we cannot distinguish them from its return value alone.
+                bool isDuplicate = !string.IsNullOrEmpty(evt.IdempotencyKey)
+                    && await _processedEventRepository.ExistsAsync(evt.IdempotencyKey, cancellationToken);
+
                 await _mediator.Send(new EvaluateFrameCommand(evt.Frame, evt.IdempotencyKey), cancellationToken);
-                applied++;
+
+                if (isDuplicate)
+                    duplicates++;
+                else
+                    applied++;
             }
         }
 
