@@ -59,7 +59,7 @@ jobs:
             clients/cpp/build/vcpkg_installed
             services/cpp-compute/build/vcpkg_installed
             ~/.cache/vcpkg
-          key: ${{ runner.os }}-vcpkg-rel-${{ hashFiles('clients/cpp/vcpkg.json', 'services/cpp-compute/vcpkg.json', 'triplets/x64-linux-rel.cmake') }}
+          key: ${{ runner.os }}-vcpkg-rel-${{ hashFiles('clients/cpp/vcpkg.json', 'services/cpp-compute/vcpkg.json') }}
           restore-keys: |
             ${{ runner.os }}-vcpkg-rel-
 
@@ -107,7 +107,7 @@ jobs:
             clients/cpp/build/vcpkg_installed
             services/cpp-compute/build/vcpkg_installed
             ~/.cache/vcpkg
-          key: ${{ runner.os }}-vcpkg-rel-${{ hashFiles('clients/cpp/vcpkg.json', 'services/cpp-compute/vcpkg.json', 'triplets/x64-linux-rel.cmake') }}
+          key: ${{ runner.os }}-vcpkg-rel-${{ hashFiles('clients/cpp/vcpkg.json', 'services/cpp-compute/vcpkg.json') }}
 
       - name: Build C++
         run: |
