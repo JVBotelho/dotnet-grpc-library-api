@@ -1,10 +1,10 @@
-﻿using LibrarySystem.Application.Abstractions.Repositories;
+using LibrarySystem.Application.Abstractions.Repositories;
 using LibrarySystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace LibrarySystem.Persistence.Repositories;
 
-internal sealed class BookRepository : IBookRepository
+public sealed class BookRepository : IBookRepository
 {
     private readonly LibraryDbContext _context;
 
@@ -18,6 +18,14 @@ internal sealed class BookRepository : IBookRepository
         return await _context.Books
             .Include(b => b.LendingActivities)
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
+    }
+
+    public async Task<List<Book>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default)
+    {
+        return await _context.Books
+            .Include(b => b.LendingActivities)
+            .Where(b => ids.Contains(b.Id))
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<Book>> GetAllAsync(CancellationToken cancellationToken = default)

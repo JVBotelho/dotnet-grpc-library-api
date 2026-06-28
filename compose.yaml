@@ -1,4 +1,4 @@
-﻿services:
+services:
   library-api:
     container_name: library-api
     build:
@@ -20,20 +20,48 @@
         limits:
           memory: 512M
 
+  library-compute:
+    container_name: library-compute
+    build:
+      context: .
+      dockerfile: services/cpp-compute/Dockerfile
+    networks:
+      - library-net
+    restart: unless-stopped
+
+  cert-generator:
+    container_name: cert-generator
+    image: alpine:latest
+    volumes:
+      - .:/app
+    command: >
+      /bin/sh -c "if [ ! -f /app/certs/server.pfx ]; then apk add --no-cache openssl bash && bash /app/scripts/gen-dev-ca.sh; else echo 'Certificates already exist.'; fi"
+
   library-grpc:
     container_name: library-grpc
     build:
       context: .
       dockerfile: LibrarySystem.Grpc/Dockerfile
-#    ports:
-#      - "5001:8080"
+    ports:
+      - "5001:8080"
+      - "8443:8443"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080;https://+:8443
+      - Kestrel__Endpoints__Https__Url=https://+:8443
+      - Kestrel__Endpoints__Https__Certificate__Path=/etc/certs/server.pfx
+      - Kestrel__Endpoints__Https__Certificate__Password=${PFX_PASSWORD:-password}
+      - GrpcSettings__ComputeUrl=http://library-compute:50052
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=librarydb;Username=user;Password=${DB_PASSWORD:-changeme_in_prod}
+      - Security__GrpcApiKey=${GRPC_API_KEY:-secret-kiosk-key}
     depends_on:
+      cert-generator:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
+    volumes:
+      - ./logs/waf:/var/log/waf:ro
+      - ./certs:/etc/certs:ro
     networks:
       - library-net
     restart: unless-stopped
@@ -45,8 +73,6 @@
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme_in_prod}
       - POSTGRES_DB=librarydb
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -60,7 +86,7 @@
       
   waf:
     build:
-      context: ./waf
+      context: ./Waf
       dockerfile: Dockerfile
     container_name: library-waf
     restart: unless-stopped
@@ -78,6 +104,30 @@
       - library-api
     networks:
       - library-net
+
+  library-kiosk:
+    container_name: library-kiosk
+    build:
+      context: .
+      dockerfile: clients/cpp/Dockerfile
+    profiles:
+      - kiosk
+    ports:
+      - "5555:5555/udp"
+    environment:
+      - KIOSK_SERVER_ENDPOINT=library-grpc:8443
+      - KIOSK_DEVICE_ID=KIOSK-001
+      - KIOSK_USE_TLS=1
+      - KIOSK_ROOT_CERTS_PATH=/etc/certs/ca.crt
+      - KIOSK_CERT_CHAIN_PATH=/etc/certs/client.crt
+      - KIOSK_PRIVATE_KEY_PATH=/etc/certs/client.key
+      - KIOSK_API_KEY=${KIOSK_API_KEY:-secret-kiosk-key}
+    volumes:
+      - ./certs:/etc/certs:ro
+    networks:
+      - library-net
+    depends_on:
+      - library-grpc
 
 volumes:
   postgres_data:

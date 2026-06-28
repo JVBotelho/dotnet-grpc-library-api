@@ -1,0 +1,50 @@
+syntax = "proto3";
+package LibrarySystem.Contracts.Protos;
+option csharp_namespace = "LibrarySystem.Contracts.Protos";
+import "google/protobuf/timestamp.proto";
+
+service Kiosk {
+  rpc ValidateMember     (ValidateMemberRequest)      returns (ValidateMemberResponse);   // unary
+  rpc BulkReturn         (stream ReturnScan)          returns (BulkReturnSummary);        // client-stream
+  rpc SyncOfflineQueue   (stream BufferedEvent)       returns (SyncSummary);              // client-stream
+  rpc DeviceLink         (stream DeviceFrame)         returns (stream ControlCommand);    // bidi
+}
+
+service Telemetry {
+  rpc WatchDeviceFrames  (WatchDeviceFramesRequest)   returns (stream DeviceFrame);       // server-stream
+}
+
+message WatchDeviceFramesRequest { string device_id = 1; } // optional filter
+
+message ValidateMemberRequest { string device_id = 1; string card_uid = 2; }
+message ValidateMemberResponse { bool valid = 1; int32 borrower_id = 2; string display_name = 3; string reason = 4; }
+
+message ReturnScan { string device_id = 1; int32 book_id = 2; google.protobuf.Timestamp scanned_at = 3; string idempotency_key = 4; }
+message BulkReturnSummary {
+  int32 accepted = 1;
+  int32 rejected = 2;
+  repeated int32 unknown_book_ids = 3;
+  int32 duplicates_skipped = 4;
+}
+
+message BufferedEvent { string idempotency_key = 1; oneof payload { ReturnScan return_scan = 2; DeviceFrame frame = 3; } }
+message SyncSummary { int32 applied = 1; int32 duplicates_skipped = 2; }
+
+// Decoded CAN-FD signals
+message DeviceFrame {
+  string device_id = 1;
+  google.protobuf.Timestamp sampled_at = 2;
+  uint32 can_id = 3;                 // 11/29-bit arbitration id
+  double belt_motor_temp_c = 4;
+  double scanner_rpm = 5;
+  bool   safety_door_closed = 6;
+  uint32 bay_occupancy = 7;          // bitmask of occupied bays
+  uint32 fault_flags = 8;            // DTC-style bitfield
+}
+
+message ControlCommand {
+  enum Kind { NOOP = 0; STOP_MOTOR = 1; RAISE_ALARM = 2; THROTTLE_INTAKE = 3; CLEAR_FAULT = 4; }
+  Kind kind = 1;
+  string reason = 2;
+  uint32 arg = 3;                    // e.g. throttle percent
+}

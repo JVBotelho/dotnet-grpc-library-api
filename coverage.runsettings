@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <!-- Exclude protobuf/gRPC generated stubs, WPF code-behind, and non-unit-testable infrastructure -->
+          <ExcludeByFile>
+            **/obj/**/*.cs,
+            **/*.g.cs,
+            **/*.g.i.cs
+          </ExcludeByFile>
+          <ExcludeByAttribute>GeneratedCode,ExcludeFromCodeCoverage,CompilerGenerated</ExcludeByAttribute>
+          <Exclude>
+            <!-- Protobuf-generated types and gRPC stubs -->
+            [LibrarySystem.Contracts]*,
+            <!-- Auto-generated OpenApi models -->
+            [Microsoft.AspNetCore.OpenApi]*,
+            <!-- Migrations, Program and Bootstrapping -->
+            [LibrarySystem.Persistence]LibrarySystem.Persistence.Migrations.*,
+            [LibrarySystem.Persistence]LibrarySystem.Persistence.SeedData,
+            [LibrarySystem.Persistence]LibrarySystem.Persistence.DependencyInjection,
+            [LibrarySystem.Api]Program,
+            <!-- WPF App bootstrap, MainWindow code-behind, Behaviors, Converters -->
+            [LibrarySystem.Tools]LibrarySystem.Tools.App,
+            [LibrarySystem.Tools]LibrarySystem.Tools.MainWindow*,
+            [LibrarySystem.Tools]LibrarySystem.Tools.Behaviors.*,
+            [LibrarySystem.Tools]LibrarySystem.Tools.Converters.*
+          </Exclude>
+          <Format>cobertura</Format>
+          <DeterministicReport>true</DeterministicReport>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

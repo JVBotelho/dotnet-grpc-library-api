@@ -41,3 +41,4 @@ This replaces the traditional Nginx + ModSecurity v3 stack.
 ### Negative / Risks
 * **Build Complexity:** Requires a custom Docker build using `xcaddy` to compile the WAF plugin into the server, rather than simply pulling a standard image.
 * **Tuning Requirements:** Strict WAF rules (Paranoia Level 2) require careful tuning (Exclusion Rules 900) to prevent false positives with ASP.NET Core features like SignalR and Antiforgery Tokens.
+* **L4 Passthrough Limitations:** Layer 7 WAFs like Coraza cannot inspect mTLS payloads. An attempt to use Caddy as a Layer 4 TCP passthrough for the Edge Kiosk's gRPC traffic (`:8443`) proved unstable. Consequently, mTLS traffic is exposed directly on the Kestrel backend container, bypassing the WAF. See [ADR 003](./003-cpp-edge-device-can-telemetry.md) for details.

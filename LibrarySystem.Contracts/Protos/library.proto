@@ -1,6 +1,6 @@
-﻿syntax = "proto3";
+syntax = "proto3";
+package LibrarySystem.Contracts.Protos;
 
-// O namespace C# que será gerado a partir deste ficheiro.
 option csharp_namespace = "LibrarySystem.Contracts.Protos";
 
 import "google/protobuf/empty.proto";
@@ -20,6 +20,11 @@ service Library {
   rpc EstimateReadingRate (EstimateReadingRateRequest) returns (EstimateReadingRateResponse);
   rpc CreateLending (CreateLendingRequest) returns (LendingActivityResponse);
   rpc ReturnBook (ReturnBookRequest) returns (LendingActivityResponse);
+  rpc ComputeImageHash (ComputeImageHashRequest) returns (ComputeImageHashResponse);
+}
+
+service Security {
+  rpc WatchWafLogs (google.protobuf.Empty) returns (stream WafLogEntry);
 }
 
 message GetBookByIdRequest {
@@ -156,4 +161,22 @@ message LendingActivityResponse {
   int32 borrower_id = 3;
   google.protobuf.Timestamp borrowed_date = 4;
   optional google.protobuf.Timestamp returned_date = 5;
+}
+
+message WafLogEntry {
+  string timestamp = 1;
+  string client_ip = 2;
+  string request_uri = 3;
+  string action = 4;    
+  string rule_id = 5; 
+  string details = 6;
+}
+
+message ComputeImageHashRequest {
+  string image_id = 1;
+  bytes image_data = 2;
+}
+
+message ComputeImageHashResponse {
+  string p_hash = 1;
 }

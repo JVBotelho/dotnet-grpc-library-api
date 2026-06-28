@@ -1,0 +1,17 @@
+{
+  "solution": {
+    "path": "LibrarySystem.sln",
+    "projects": [
+      "LibrarySystem.Api\\LibrarySystem.Api.csproj",
+      "LibrarySystem.Application\\LibrarySystem.Application.csproj",
+      "LibrarySystem.Contracts\\LibrarySystem.Contracts.csproj",
+      "LibrarySystem.Domain\\LibrarySystem.Domain.csproj",
+      "LibrarySystem.Grpc\\LibrarySystem.Grpc.csproj",
+      "LibrarySystem.IntegrationTests\\LibrarySystem.IntegrationTests.csproj",
+      "LibrarySystem.Persistence\\LibrarySystem.Persistence.csproj",
+      "LibrarySystem.TrafficGenerator\\LibrarySystem.TrafficGenerator.csproj",
+      "LibrarySystem.UnitTests\\LibrarySystem.UnitTests.csproj",
+      "WarmupTasks\\WarmupTasks.csproj"
+    ]
+  }
+}

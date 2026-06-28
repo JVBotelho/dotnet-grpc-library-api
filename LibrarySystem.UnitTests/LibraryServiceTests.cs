@@ -1,4 +1,4 @@
-﻿using AutoFixture;
+using AutoFixture;
 using FluentAssertions;
 using Grpc.Core;
 using LibrarySystem.Application.DTOs;
@@ -29,14 +29,14 @@ public class LibraryServiceTests
         _fixture.Behaviors.Add(new OmitOnRecursionBehavior());
 
         _senderMock = new Mock<ISender>();
+        var computeClientMock = new Mock<LibrarySystem.Application.Abstractions.Services.IImageHashingService>();
 
-        _sut = new LibraryService(_senderMock.Object);
+        _sut = new LibraryService(_senderMock.Object, computeClientMock.Object);
     }
 
     [Fact]
     public async Task GetBookById_WhenBookExists_ShouldReturnCorrectResponse()
     {
-        // Arrange
         var bookId = 1;
         var bookDto = _fixture.Create<BookDto>();
 
@@ -45,11 +45,7 @@ public class LibraryServiceTests
             .ReturnsAsync(bookDto);
 
         var request = new GetBookByIdRequest { Id = bookId };
-
-        // Act
         var response = await _sut.GetBookById(request, TestServerCallContext.Create());
-
-        // Assert
         response.Should().NotBeNull();
         response.Title.Should().Be(bookDto.Title);
         response.Id.Should().Be(bookDto.Id);
@@ -58,7 +54,6 @@ public class LibraryServiceTests
     [Fact]
     public async Task GetBookById_WhenBookDoesNotExist_ShouldThrowRpcException_NotFound()
     {
-        // Arrange
         var bookId = 99;
 
         _senderMock
@@ -66,8 +61,6 @@ public class LibraryServiceTests
             .ReturnsAsync((BookDto?)null);
 
         var request = new GetBookByIdRequest { Id = bookId };
-
-        // Act & Assert
         var action = async () => await _sut.GetBookById(request, TestServerCallContext.Create());
 
         await action.Should().ThrowAsync<RpcException>()
@@ -77,18 +70,13 @@ public class LibraryServiceTests
     [Fact]
     public async Task CreateBook_ShouldSendCommand_AndReturnResponse()
     {
-        // Arrange
         var request = _fixture.Create<CreateBookRequest>();
         var expectedDto = _fixture.Create<BookDto>();
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<CreateBookCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedDto);
-
-        // Act
         var response = await _sut.CreateBook(request, TestServerCallContext.Create());
-
-        // Assert
         response.Should().NotBeNull();
         response.Title.Should().Be(expectedDto.Title);
 
@@ -103,14 +91,11 @@ public class LibraryServiceTests
     [Fact]
     public async Task CreateLending_WhenDomainThrowsInvalidOperation_ShouldThrowRpcFailedPrecondition()
     {
-        // Arrange
         var request = _fixture.Create<CreateLendingRequest>();
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<BorrowBookCommand>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("No copies available"));
-
-        // Act & Assert
         var action = async () => await _sut.CreateLending(request, TestServerCallContext.Create());
 
         await action.Should().ThrowAsync<RpcException>()
@@ -120,14 +105,11 @@ public class LibraryServiceTests
     [Fact]
     public async Task CreateLending_WhenBorrowerNotFound_ShouldThrowRpcNotFound()
     {
-        // Arrange
         var request = _fixture.Create<CreateLendingRequest>();
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<BorrowBookCommand>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new KeyNotFoundException("Borrower not found"));
-
-        // Act & Assert
         var action = async () => await _sut.CreateLending(request, TestServerCallContext.Create());
 
         await action.Should().ThrowAsync<RpcException>()
@@ -137,18 +119,13 @@ public class LibraryServiceTests
     [Fact]
     public async Task GetMostBorrowedBooks_ShouldMapResponseCorrectly()
     {
-        // Arrange
         var booksDto = _fixture.CreateMany<BookDto>(3).ToList();
         var request = new GetMostBorrowedBooksRequest { Count = 3 };
 
         _senderMock
             .Setup(x => x.Send(It.Is<GetMostBorrowedQuery>(q => q.Count == 3), It.IsAny<CancellationToken>()))
             .ReturnsAsync(booksDto);
-
-        // Act
         var response = await _sut.GetMostBorrowedBooks(request, TestServerCallContext.Create());
-
-        // Assert
         response.MostBorrowedBooks.Should().HaveCount(3);
         response.MostBorrowedBooks.First().Book.Title.Should().Be(booksDto.First().Title);
     }

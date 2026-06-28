@@ -1,0 +1,137 @@
+# Production compose — uses pre-built images from ghcr.io.
+# No compilation required. Run with:
+#
+#   docker compose -f compose.prod.yaml up
+#
+# Images are built and published automatically by CI on every push to main.
+
+services:
+  library-api:
+    container_name: library-api
+    image: ghcr.io/jvbotelho/library-system-api:latest
+    pull_policy: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - GrpcSettings__ServiceUrl=http://library-grpc:8080
+      - ASPNETCORE_URLS=http://+:8080
+    depends_on:
+      - library-grpc
+    networks:
+      - library-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  library-compute:
+    container_name: library-compute
+    image: ghcr.io/jvbotelho/library-system-cpp-compute:latest
+    pull_policy: always
+    networks:
+      - library-net
+    restart: unless-stopped
+
+  library-kiosk:
+    container_name: library-kiosk
+    image: ghcr.io/jvbotelho/library-system-kiosk:latest
+    pull_policy: always
+    profiles:
+      - kiosk
+    ports:
+      - "5555:5555/udp"
+    environment:
+      - KIOSK_SERVER_ENDPOINT=library-grpc:8443
+      - KIOSK_DEVICE_ID=KIOSK-001
+      - KIOSK_USE_TLS=1
+      - KIOSK_ROOT_CERTS_PATH=/etc/certs/ca.crt
+      - KIOSK_CERT_CHAIN_PATH=/etc/certs/client.crt
+      - KIOSK_PRIVATE_KEY_PATH=/etc/certs/client.key
+      - KIOSK_API_KEY=${KIOSK_API_KEY:-secret-kiosk-key}
+    volumes:
+      - ./certs:/etc/certs:ro
+    networks:
+      - library-net
+    depends_on:
+      - library-grpc
+
+  cert-generator:
+    container_name: cert-generator
+    image: alpine:latest
+    volumes:
+      - .:/app
+    command: >
+      /bin/sh -c "if [ ! -f /app/certs/server.pfx ]; then apk add --no-cache openssl bash && bash /app/scripts/gen-dev-ca.sh; else echo 'Certificates already exist.'; fi"
+
+  library-grpc:
+    container_name: library-grpc
+    image: ghcr.io/jvbotelho/library-system-grpc:latest
+    pull_policy: always
+    ports:
+      - "5001:8080"
+      - "8443:8443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080;https://+:8443
+      - Kestrel__Endpoints__Https__Url=https://+:8443
+      - Kestrel__Endpoints__Https__Certificate__Path=/etc/certs/server.pfx
+      - Kestrel__Endpoints__Https__Certificate__Password=${PFX_PASSWORD:-password}
+      - GrpcSettings__ComputeUrl=http://library-compute:50052
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=librarydb;Username=user;Password=${DB_PASSWORD:-changeme_in_prod}
+      - Security__GrpcApiKey=${GRPC_API_KEY:-secret-kiosk-key}
+    depends_on:
+      cert-generator:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+    volumes:
+      - ./logs/waf:/var/log/waf:ro
+      - ./certs:/etc/certs:ro
+    networks:
+      - library-net
+    restart: unless-stopped
+
+  db:
+    container_name: library-db
+    image: postgres:16.11-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme_in_prod}
+      - POSTGRES_DB=librarydb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user -d librarydb" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - library-net
+    restart: always
+
+  waf:
+    container_name: library-waf
+    image: ghcr.io/jvbotelho/library-system-waf:latest
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "9090:9090"
+    environment:
+      - BACKEND_HOST=library-api:8080
+    volumes:
+      - ./Waf/Caddyfile:/etc/caddy/Caddyfile
+      - ./Waf/coraza.conf:/etc/coraza/coraza.conf
+      - ./Waf/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:/etc/coraza/crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+      - ./logs/waf:/var/log/waf
+    depends_on:
+      - library-api
+    networks:
+      - library-net
+
+volumes:
+  postgres_data:
+
+networks:
+  library-net:
+    driver: bridge

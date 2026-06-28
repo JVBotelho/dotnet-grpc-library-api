@@ -1,5 +1,6 @@
-﻿using Google.Protobuf.WellKnownTypes;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using LibrarySystem.Application.Abstractions.Services;
 using LibrarySystem.Application.DTOs;
 using LibrarySystem.Application.UseCases.Books.CreateBook;
 using LibrarySystem.Application.UseCases.Books.Delete;
@@ -17,22 +18,21 @@ using LibrarySystem.Application.UseCases.Reports.GetUserHistory;
 using LibrarySystem.Contracts.Protos;
 using MediatR;
 
-// Adicione namespaces para as outras queries que criamos acima
-// Assumindo que você colocou todas num namespace global ou similar
+
+
 
 namespace LibrarySystem.Grpc.Services;
 
 public class LibraryService : Library.LibraryBase
 {
     private readonly ISender _sender;
+    private readonly IImageHashingService _hashingService;
 
-    public LibraryService(ISender sender)
+    public LibraryService(ISender sender, IImageHashingService hashingService)
     {
         _sender = sender;
+        _hashingService = hashingService;
     }
-
-    // --- BOOKS CRUD ---
-
     public override async Task<BookResponse> GetBookById(GetBookByIdRequest request, ServerCallContext context)
     {
         var result = await _sender.Send(new GetBookByIdQuery(request.Id), context.CancellationToken);
@@ -83,9 +83,6 @@ public class LibraryService : Library.LibraryBase
             throw new RpcException(new Status(StatusCode.NotFound, "Book not found"));
         }
     }
-
-    // --- LENDING OPERATIONS ---
-
     public override async Task<LendingActivityResponse> CreateLending(CreateLendingRequest request,
         ServerCallContext context)
     {
@@ -131,17 +128,14 @@ public class LibraryService : Library.LibraryBase
             throw new RpcException(new Status(StatusCode.FailedPrecondition, ex.Message));
         }
     }
-
-    // --- REPORTS ---
-
     public override async Task<GetMostBorrowedBooksResponse> GetMostBorrowedBooks(GetMostBorrowedBooksRequest request,
         ServerCallContext context)
     {
         var result = await _sender.Send(new GetMostBorrowedQuery(request.Count), context.CancellationToken);
         var response = new GetMostBorrowedBooksResponse();
-        // Nota: O proto original esperava MostBorrowedBookInfo com contagem, mas o Application retorna apenas BookDto.
-        // Simplificando para retornar o livro. Se precisar da contagem, o DTO teria que mudar.
-        // Assumindo adaptação para preencher apenas o livro por enquanto:
+        // Note: Returning just the BookDto for now.
+        // If the count is needed later, the DTO will need to be updated.
+
         response.MostBorrowedBooks.AddRange(result.Select(b => new MostBorrowedBookInfo
             { Book = MapToResponse(b), BorrowCount = 0 }));
         return response;
@@ -206,7 +200,7 @@ public class LibraryService : Library.LibraryBase
         var result = await _sender.Send(new GetAlsoBorrowedQuery(request.BookId, request.Count),
             context.CancellationToken);
         var response = new GetAlsoBorrowedBooksResponse();
-        // Mesmo caso da contagem, simplificando para retornar o livro
+        
         response.AlsoBorrowedBooks.AddRange(result.Select(b => new AlsoBorrowedBookInfo
             { Book = MapToResponse(b), CommonBorrowersCount = 0 }));
         return response;
@@ -225,8 +219,12 @@ public class LibraryService : Library.LibraryBase
             throw new RpcException(new Status(StatusCode.NotFound, "Book not found"));
         }
     }
+    public override async Task<ComputeImageHashResponse> ComputeImageHash(ComputeImageHashRequest request, ServerCallContext context)
+    {
+        var hash = await _hashingService.ComputeHashAsync(request.ImageData.ToByteArray(), context.CancellationToken);
+        return new ComputeImageHashResponse { PHash = hash };
+    }
 
-    // Helper
     private static BookResponse MapToResponse(BookDto dto)
     {
         return new BookResponse
@@ -236,3 +234,4 @@ public class LibraryService : Library.LibraryBase
         };
     }
 }
+

@@ -1,4 +1,4 @@
-﻿FROM caddy:builder AS builder
+FROM caddy:builder AS builder
 
 RUN xcaddy build \
     --with github.com/corazawaf/coraza-caddy/v2 \
@@ -8,7 +8,7 @@ RUN xcaddy build \
 FROM alpine:latest AS crs_downloader
 
 RUN apk add --no-cache git
-RUN git clone -b v4.0/dev https://github.com/coreruleset/coreruleset /owasp-crs
+RUN git clone -b v4.0.0 https://github.com/coreruleset/coreruleset /owasp-crs
 RUN cp /owasp-crs/crs-setup.conf.example /owasp-crs/crs-setup.conf
 
 FROM caddy:latest

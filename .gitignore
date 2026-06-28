@@ -54,8 +54,9 @@ Desktop.ini
 # Docker
 docker-compose.override.yml
 
-# Secrets
+# Secrets — use appsettings.Development.json.example for safe templates
 secrets.json
+appsettings.Development.json
 
 # Other
 *.Cache
@@ -65,11 +66,57 @@ ClientBin/
 *.dbmdl
 *.dbproj.schemaview
 *.pfx
+*.key
+*.csr
 *.publishsettings
 node_modules/
 npm-debug.log
 logs/
 *.log
-*.json
 .DS_Store
 .env
+
+# Design handoff
+.design*
+*.zip
+
+# Code coverage output
+coverage/
+coverage-wpf/
+*.cobertura.xml
+code-coverage-results.md
+
+# C++ Build and Coverage
+build/
+build_*/
+cmake-build-*/
+*.gcda
+*.gcno
+coverage.info
+coverage_src.info
+*.pb.h
+*.pb.cc
+kiosk_tests
+kiosk_benchmarks
+
+# vcpkg
+vcpkg_installed/
+vcpkg-archive/
+.vcpkg-root
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# CMake / Make
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+.cache/
+Testing/
+certs/

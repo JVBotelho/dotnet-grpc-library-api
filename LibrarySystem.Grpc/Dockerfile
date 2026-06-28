@@ -1,6 +1,8 @@
-﻿FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
+COPY ["Directory.Packages.props", "."]
+COPY ["Directory.Build.props", "."]
 COPY ["LibrarySystem.Grpc/LibrarySystem.Grpc.csproj", "LibrarySystem.Grpc/"]
 COPY ["LibrarySystem.Application/LibrarySystem.Application.csproj", "LibrarySystem.Application/"]
 COPY ["LibrarySystem.Domain/LibrarySystem.Domain.csproj", "LibrarySystem.Domain/"]

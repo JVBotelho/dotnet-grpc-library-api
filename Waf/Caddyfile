@@ -16,6 +16,20 @@
                    directives `
             Include /etc/coraza/coraza.conf
             Include /etc/coraza/crs/crs-setup.conf
+            SecAction \
+             "id:900200,\
+              phase:1,\
+              nolog,\
+              pass,\
+              t:none,\
+              setvar:'tx.allowed_request_content_type=|application/x-www-form-urlencoded| |multipart/form-data| |text/xml| |application/xml| |application/soap+xml| |application/json| |application/grpc|'"
+            SecRule REQUEST_HEADERS:Content-Type "@streq application/grpc" \
+                "id:19999,\
+                phase:1,\
+                pass,\
+                nolog,\
+                ctl:ruleRemoveById=920270,\
+                ctl:ruleRemoveById=921150"
             Include /etc/coraza/crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
             Include /etc/coraza/crs/rules/REQUEST-901-INITIALIZATION.conf
             Include /etc/coraza/crs/rules/REQUEST-911-METHOD-ENFORCEMENT.conf
@@ -40,6 +54,23 @@
         `
                }
 
+    @grpc {
+              header Content-Type application/grpc*
+          }
+
+    handle @grpc {
+                     reverse_proxy h2c://library-grpc:8080 {
+                                                               header_up X-Real-IP {remote_host}
+                                                               flush_interval -1
+                                                           }
+                 }
+
+    handle {
+               reverse_proxy library-api:8080 {
+                                                  header_up X-Real-IP {remote_host}
+                                              }
+           }
+
     log {
             output file /var/log/waf/access.json
             format json
@@ -57,8 +88,4 @@
     handle /metrics {
                         metrics
                     }
-
-    reverse_proxy library-api:8080 {
-                                       header_up X-Real-IP {remote_host}
-                                   }
 }

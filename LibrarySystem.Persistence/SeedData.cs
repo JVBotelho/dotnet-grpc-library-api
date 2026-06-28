@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using LibrarySystem.Domain.Entities;
 using LibrarySystem.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +37,15 @@ public static class SeedData
 
         await context.Borrowers.AddRangeAsync(borrowers);
         await context.Books.AddRangeAsync(books);
+        await context.SaveChangesAsync(); // Save to generate IDs
+
+        var cardMappings = new[]
+        {
+            new CardMapping("A1-B2-C3-D4", borrowers[0].Id),
+            new CardMapping("E5-F6-G7-H8", borrowers[1].Id),
+            new CardMapping("I9-J0-K1-L2", borrowers[2].Id)
+        };
+        await context.CardMappings.AddRangeAsync(cardMappings);
 
 
         CreateHistoricalLending(books[0], borrowers[0], 30, 15);
