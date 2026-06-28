@@ -211,7 +211,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build and push library-grpc
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: LibrarySystem.Grpc/Dockerfile
@@ -223,7 +223,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=grpc
 
       - name: Build and push library-api
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: LibrarySystem.Api/Dockerfile
@@ -236,7 +236,7 @@ jobs:
 
       - name: Build and push library-cpp-compute
         # Uses Dockerfile.ci which just COPYs the pre-built binary — no vcpkg, no compilation.
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: services/cpp-compute/Dockerfile.ci
@@ -248,7 +248,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=cpp-compute
 
       - name: Build and push library-kiosk
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: clients/cpp/Dockerfile.ci
@@ -260,7 +260,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=kiosk
 
       - name: Build and push library-waf
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./Waf
           file: Waf/Dockerfile
