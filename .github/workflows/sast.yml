@@ -40,6 +40,7 @@ jobs:
 
     - name: Restore vcpkg
       if: matrix.language == 'cpp'
+      id: vcpkg-cache-restore
       uses: actions/cache/restore@v4
       with:
         path: |
@@ -73,6 +74,16 @@ jobs:
         TRIPLETS="${{ github.workspace }}/triplets"
         cmake -S clients/cpp -B clients/cpp/build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_TRIPLETS="$TRIPLETS" -DVCPKG_TARGET_TRIPLET=x64-linux-rel -DCMAKE_BUILD_TYPE=Release
         cmake -S services/cpp-compute -B services/cpp-compute/build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_TRIPLETS="$TRIPLETS" -DVCPKG_TARGET_TRIPLET=x64-linux-rel -DCMAKE_BUILD_TYPE=Release
+
+    - name: Save vcpkg cache
+      if: matrix.language == 'cpp' && steps.vcpkg-cache-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          clients/cpp/build/vcpkg_installed
+          services/cpp-compute/build/vcpkg_installed
+          ~/.cache/vcpkg
+        key: ${{ runner.os }}-vcpkg-rel-${{ hashFiles('clients/cpp/vcpkg.json', 'services/cpp-compute/vcpkg.json') }}
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
