@@ -10,9 +10,21 @@ public class InspectorViewModelTests
 {
     private static InspectorViewModel CreateSut(
         IGraphDataService? graphService = null,
-        INotificationService? notifications = null) =>
-        new(graphService ?? Mock.Of<IGraphDataService>(),
-            notifications ?? Mock.Of<INotificationService>());
+        INotificationService? notifications = null,
+        Mock<ITelemetryService>? telemetryMock = null)
+    {
+        if (telemetryMock == null)
+        {
+            telemetryMock = new Mock<ITelemetryService>();
+            telemetryMock.Setup(x => x.WatchDeviceFramesAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                         .Returns(AsyncEnumerable.Empty<LibrarySystem.Contracts.Protos.DeviceFrame>());
+        }
+
+        return new InspectorViewModel(
+            graphService ?? Mock.Of<IGraphDataService>(),
+            notifications ?? Mock.Of<INotificationService>(),
+            telemetryMock.Object);
+    }
 
     [Fact]
     public void LoadNode_WithBook_PopulatesAllEditFields()

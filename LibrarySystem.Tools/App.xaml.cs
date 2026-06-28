@@ -8,6 +8,7 @@ using LibrarySystem.Tools.ViewModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Net.Http;
 
 namespace LibrarySystem.Tools;
 
@@ -35,7 +36,19 @@ public partial class App : Application
 
                 // Required for cleartext HTTP/2 (h2c) on non-loopback; harmless for localhost.
                 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-                var channel = GrpcChannel.ForAddress(endpoint);
+                
+                var handler = new HttpClientHandler();
+                handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+                
+                var certPath = ctx.Configuration["InspectorCertPath"];
+                if (!string.IsNullOrEmpty(certPath) && System.IO.File.Exists(certPath))
+                {
+                    // WPF uses the pfx version for easy loading with private key
+                    handler.ClientCertificates.Add(System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12FromFile(certPath, "password"));
+                }
+                
+                var channelOptions = new GrpcChannelOptions { HttpHandler = handler };
+                var channel = GrpcChannel.ForAddress(endpoint, channelOptions);
                 var callInvoker = channel.Intercept(metadata =>
                 {
                     metadata.Add("x-api-key", apiKey);
@@ -45,10 +58,12 @@ public partial class App : Application
                 services.AddSingleton(channel);
                 services.AddSingleton(_ => new Library.LibraryClient(callInvoker));
                 services.AddSingleton(_ => new Security.SecurityClient(callInvoker));
+                services.AddSingleton(_ => new Telemetry.TelemetryClient(callInvoker));
 
                 // Service abstractions — ViewModels depend only on these interfaces.
                 services.AddSingleton<IGraphDataService, GrpcGraphDataService>();
                 services.AddSingleton<ILogTailerService, GrpcLogTailerService>();
+                services.AddSingleton<ITelemetryService, TelemetryService>();
 
                 // Notification service: singleton registered as both concrete
                 // type (for XAML binding) and interface (for ViewModel injection).

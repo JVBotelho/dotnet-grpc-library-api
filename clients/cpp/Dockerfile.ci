@@ -1,0 +1,4 @@
+FROM ubuntu:24.04
+WORKDIR /app
+COPY clients/cpp/build/kiosk .
+ENTRYPOINT ["./kiosk", "--can-link", "udp:5555"]

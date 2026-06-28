@@ -1,0 +1,93 @@
+name: SAST
+
+on:
+  push:
+    branches: [ "main", "master", "develop" ]
+  pull_request:
+    branches: [ "main", "master", "develop" ]
+
+jobs:
+  sast:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'csharp', 'cpp' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      if: matrix.language == 'csharp'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Restore C# Dependencies
+      if: matrix.language == 'csharp'
+      run: dotnet restore LibrarySystem.Linux.slnf
+
+    - name: Fetch vcpkg baseline
+      if: matrix.language == 'cpp'
+      run: sudo git -C $VCPKG_INSTALLATION_ROOT fetch origin d9d4599ab67bd4e3297e5a43c837e04104e280d8 --depth=1
+
+    - name: Restore vcpkg
+      if: matrix.language == 'cpp'
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          clients/cpp/build/vcpkg_installed
+          services/cpp-compute/build/vcpkg_installed
+          ~/.cache/vcpkg
+        key: ${{ runner.os }}-vcpkg-rel-${{ hashFiles('clients/cpp/vcpkg.json', 'services/cpp-compute/vcpkg.json') }}
+        restore-keys: |
+          ${{ runner.os }}-vcpkg-rel-
+
+    - name: Create release-only vcpkg triplet
+      if: matrix.language == 'cpp'
+      run: |
+        mkdir -p "${{ github.workspace }}/triplets"
+        cat > "${{ github.workspace }}/triplets/x64-linux-rel.cmake" << 'EOF'
+        set(VCPKG_TARGET_ARCHITECTURE x64)
+        set(VCPKG_CRT_LINKAGE dynamic)
+        set(VCPKG_LIBRARY_LINKAGE static)
+        set(VCPKG_CMAKE_SYSTEM_NAME Linux)
+        set(VCPKG_BUILD_TYPE release)
+        EOF
+
+    - name: Configure C++ (Runs vcpkg install)
+      if: matrix.language == 'cpp'
+      env:
+        VCPKG_MAX_CONCURRENCY: "1"
+        VCPKG_DEFAULT_TRIPLET: "x64-linux-rel"
+        VCPKG_DEFAULT_HOST_TRIPLET: "x64-linux-rel"
+        VCPKG_OVERLAY_TRIPLETS: "${{ github.workspace }}/triplets"
+      run: |
+        TRIPLETS="${{ github.workspace }}/triplets"
+        cmake -S clients/cpp -B clients/cpp/build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_TRIPLETS="$TRIPLETS" -DVCPKG_TARGET_TRIPLET=x64-linux-rel -DCMAKE_BUILD_TYPE=Release
+        cmake -S services/cpp-compute -B services/cpp-compute/build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_TRIPLETS="$TRIPLETS" -DVCPKG_TARGET_TRIPLET=x64-linux-rel -DCMAKE_BUILD_TYPE=Release
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+
+    - name: Build C#
+      if: matrix.language == 'csharp'
+      run: dotnet build LibrarySystem.Linux.slnf --no-restore --configuration Release
+
+    - name: Build C++
+      if: matrix.language == 'cpp'
+      run: |
+        cmake --build clients/cpp/build --parallel 2
+        cmake --build services/cpp-compute/build --parallel 2
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3

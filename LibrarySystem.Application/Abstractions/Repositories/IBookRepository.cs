@@ -1,10 +1,11 @@
-﻿using LibrarySystem.Domain.Entities;
+using LibrarySystem.Domain.Entities;
 
 namespace LibrarySystem.Application.Abstractions.Repositories;
 
 public interface IBookRepository
 {
     Task<Book?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<List<Book>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default);
     Task<IEnumerable<Book>> GetAllAsync(CancellationToken cancellationToken = default);
     Task AddAsync(Book book, CancellationToken cancellationToken = default);
     void Update(Book book);

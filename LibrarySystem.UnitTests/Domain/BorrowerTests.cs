@@ -20,9 +20,9 @@ public class BorrowerTests
     [InlineData("Name", "")]
     [InlineData(null, "email@example.com")]
     [InlineData("Name", null)]
-    public void Constructor_WithInvalidData_ShouldThrowArgumentException(string name, string email)
+    public void Constructor_WithInvalidData_ShouldThrowArgumentException(string? name, string? email)
     {
-        Action act = () => new Borrower(name, email);
+        Action act = () => new Borrower(name!, email!);
 
         act.Should().Throw<ArgumentException>();
     }

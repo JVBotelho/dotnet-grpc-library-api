@@ -1,4 +1,4 @@
-﻿namespace LibrarySystem.Domain.Entities;
+namespace LibrarySystem.Domain.Entities;
 
 public class Book
 {
@@ -73,7 +73,7 @@ public class Book
         if (title.Length > 500) throw new ArgumentException("Title must be 500 characters or fewer.", nameof(title));
         if (string.IsNullOrWhiteSpace(author)) throw new ArgumentException("Author cannot be empty.", nameof(author));
         if (author.Length > 300) throw new ArgumentException("Author must be 300 characters or fewer.", nameof(author));
-        if (year < 1) throw new ArgumentException("Publication year must be a positive number.", nameof(year));
+        if (year == 0) throw new ArgumentException("Publication year cannot be zero (there is no year 0).", nameof(year));
         if (pages < 1) throw new ArgumentException("Pages must be a positive number.", nameof(pages));
         if (totalCopies < 0) throw new ArgumentException("Total copies cannot be negative.", nameof(totalCopies));
     }

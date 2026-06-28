@@ -1,0 +1,50 @@
+VERSION ""
+
+
+NS_ : 
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: Node Kiosk
+
+BO_ 291 KioskTelemetry: 8 Kiosk
+ SG_ BeltMotorTemp : 0|8@1+ (0.5,20) [20|147.5] "C" Node
+ SG_ ScannerRPM : 8|12@1+ (10,0) [0|40950] "RPM" Node
+ SG_ SafetyDoor : 20|1@1+ (1,0) [0|1] "bool" Node
+ SG_ BayOccupancy : 21|3@1+ (1,0) [0|7] "count" Node
+ SG_ FaultFlags : 39|32@0+ (1,0) [0|4294967295] "bitmask" Node
+
+CM_ BO_ 291 "Kiosk Device Telemetry Frame";
+CM_ SG_ 291 BeltMotorTemp "Belt Motor Temperature in Celsius";
+CM_ SG_ 291 ScannerRPM "Optical Scanner Speed in RPM";
+CM_ SG_ 291 SafetyDoor "0=Open, 1=Closed";
+CM_ SG_ 291 BayOccupancy "Number of occupied book bays";
+CM_ SG_ 291 FaultFlags "32-bit hardware fault bitmask";

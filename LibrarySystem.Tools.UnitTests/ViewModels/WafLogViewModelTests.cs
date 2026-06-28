@@ -123,7 +123,9 @@ public class WafLogViewModelTests
     {
         await Task.Yield();
         throw new InvalidOperationException("Simulated service failure");
+#pragma warning disable CS0162 // Unreachable code detected
         yield break; // unreachable — satisfies the compiler that this is an async iterator
+#pragma warning restore CS0162
     }
 
     private static async IAsyncEnumerable<WafLogEntry> EmptyStream(

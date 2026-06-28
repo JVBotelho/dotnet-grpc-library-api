@@ -14,7 +14,6 @@ public class WafLogServiceTests : IDisposable
 {
     private readonly Mock<ILogger<WafLogService>> _loggerMock;
     private readonly WafLogService _sut;
-    private readonly string _testLogPath = "/var/log/waf/audit.json"; // We will mock file system or use a temporary path if needed.
     // Since the path is hardcoded to /var/log/waf/audit.json in WafLogService, we'll test the "File Not Found" path to get coverage.
 
     public WafLogServiceTests()

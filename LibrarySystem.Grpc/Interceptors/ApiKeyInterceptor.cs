@@ -38,4 +38,23 @@ public class ApiKeyInterceptor : Interceptor
         if (string.IsNullOrEmpty(key) || key != _expectedKey)
             throw new RpcException(new Status(StatusCode.Unauthenticated, "Missing or invalid API key."));
     }
+
+    public override async Task<TResponse> ClientStreamingServerHandler<TRequest, TResponse>(
+        IAsyncStreamReader<TRequest> requestStream, 
+        ServerCallContext context, 
+        ClientStreamingServerMethod<TRequest, TResponse> continuation)
+    {
+        Authenticate(context);
+        return await continuation(requestStream, context);
+    }
+
+    public override async Task DuplexStreamingServerHandler<TRequest, TResponse>(
+        IAsyncStreamReader<TRequest> requestStream, 
+        IServerStreamWriter<TResponse> responseStream, 
+        ServerCallContext context, 
+        DuplexStreamingServerMethod<TRequest, TResponse> continuation)
+    {
+        Authenticate(context);
+        await continuation(requestStream, responseStream, context);
+    }
 }
